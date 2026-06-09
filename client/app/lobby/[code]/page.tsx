@@ -42,17 +42,14 @@ export default function LobbyPage() {
     });
 
     socket.on('game:countdown', ({ count }: { count: number }) => {
-      console.log(`Starting in ${count}...`);
-    });
-
-    socket.on('game:started', () => {
-      router.push(`/game/${code}`);
+      if (count === 3) {
+        router.push(`/game/${code}`);
+      }
     });
 
     return () => {
       socket.off('lobby:configured');
       socket.off('game:countdown');
-      socket.off('game:started');
     };
   }, [code, router]);
 
