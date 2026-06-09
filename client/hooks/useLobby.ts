@@ -27,5 +27,23 @@ export function useLobby() {
     });
   };
 
-  return { createLobby, loading, error };
+  const joinLobby = (code: string, playerName: string) => {
+    setLoading(true);
+    setError(null);
+
+    if (!socket.connected) {
+      socket.connect();
+    }
+
+    socket.emit('lobby:join', { code, playerName }, (res: { ok: boolean; lobby?: any; error?: string }) => {
+      setLoading(false);
+      if (res.ok) {
+        router.push(`/lobby/${res.lobby.code}`);
+      } else {
+        setError(res.error || 'Unknown error');
+      }
+    });
+  };
+
+  return { createLobby, joinLobby, loading, error };
 }
