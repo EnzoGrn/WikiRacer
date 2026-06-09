@@ -6,11 +6,13 @@ vi.mock('./redis', () => ({
     hset: vi.fn().mockResolvedValue(1),
     hgetall: vi.fn(),
     expire: vi.fn().mockResolvedValue(1),
+    set: vi.fn().mockResolvedValue('OK'),
+    del: vi.fn().mockResolvedValue(1),
   }
 }));
 
 import { redis } from './redis';
-import { addPlayer, createLobby, getLobby } from './lobbyService';
+import { addPlayer, createLobby, getLobby, removePlayer } from './lobbyService';
 
 describe('createLobby', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -156,5 +158,83 @@ describe('addPlayer', () => {
     });
 
     await expect(addPlayer('ABC123', { id: 'player-2', name: 'Alice' })).rejects.toThrow('Game already started');
+  });
+});
+
+describe('removePlayer', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('removes a player from the lobby', async () => {
+    const players = [
+      { id: 'player-1', name: 'Enzo', ready: false, path: [], clicks: 0, finishedAt: null, rank: null },
+      { id: 'player-2', name: 'Alice', ready: false, path: [], clicks: 0, finishedAt: null, rank: null },
+    ];
+
+    vi.mocked(redis.hgetall).mockResolvedValue({
+      code: 'ABC123',
+      hostId: 'player-1',
+      status: 'waiting',
+      source: '',
+      target: '',
+      rules: JSON.stringify({}),
+      players: JSON.stringify(players),
+      startedAt: '',
+    });
+
+    const lobby = await removePlayer('ABC123', 'player-2');
+
+    expect(lobby).not.toBeNull();
+    expect(lobby!.players).toHaveLength(1);
+    expect(lobby!.players[0].id).toBe('player-1');
+  });
+
+  it('transfers host when host leaves', async () => {
+    const players = [
+      { id: 'player-1', name: 'Enzo', ready: false, path: [], clicks: 0, finishedAt: null, rank: null },
+      { id: 'player-2', name: 'Alice', ready: false, path: [], clicks: 0, finishedAt: null, rank: null },
+    ];
+
+    vi.mocked(redis.hgetall).mockResolvedValue({
+      code: 'ABC123',
+      hostId: 'player-1',
+      status: 'waiting',
+      source: '',
+      target: '',
+      rules: JSON.stringify({}),
+      players: JSON.stringify(players),
+      startedAt: '',
+    });
+
+    const lobby = await removePlayer('ABC123', 'player-1');
+
+    expect(lobby!.hostId).toBe('player-2');
+  });
+
+  it('returns null and deletes lobby when last player leaves', async () => {
+    const players = [
+      { id: 'player-1', name: 'Enzo', ready: false, path: [], clicks: 0, finishedAt: null, rank: null },
+    ];
+
+    vi.mocked(redis.hgetall).mockResolvedValue({
+      code: 'ABC123',
+      hostId: 'player-1',
+      status: 'waiting',
+      source: '',
+      target: '',
+      rules: JSON.stringify({}),
+      players: JSON.stringify(players),
+      startedAt: '',
+    });
+
+    const lobby = await removePlayer('ABC123', 'player-1');
+
+    expect(lobby).toBeNull();
+    expect(redis.del).toHaveBeenCalledWith('lobby:ABC123');
+  });
+
+  it('returns null if lobby not found', async () => {
+    vi.mocked(redis.hgetall).mockResolvedValue({});
+    const lobby = await removePlayer('XXXXXX', 'player-1');
+    expect(lobby).toBeNull();
   });
 });
