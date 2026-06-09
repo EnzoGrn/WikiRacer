@@ -4,17 +4,21 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { socket } from '@/lib/socket';
 import { PlayerList } from '@/components/lobby/PlayerList';
-import { Player } from '@shared/types';
+import { GameConfig } from '@/components/lobby/GameConfig';
+import type { Lobby, Rules } from '@shared/types';
 
-interface Lobby {
-  code: string;
-  hostId: string;
-  players: Player[];
-}
+const DEFAULT_RULES: Rules = {
+  noCtrlF: false,
+  noBack: false,
+  noRightClick: false,
+  noCategories: false,
+  timeLimit: null,
+};
 
 export default function LobbyPage() {
   const { code } = useParams<{ code: string }>();
   const [lobby, setLobby] = useState<Lobby | null>(null);
+  const isHost = lobby?.hostId === socket.id;
 
   useEffect(() => {
     if (!socket.connected) socket.connect();
@@ -22,6 +26,14 @@ export default function LobbyPage() {
     socket.emit('lobby:get', { code }, (res: { ok: boolean; lobby?: Lobby }) => {
       if (res.ok && res.lobby) setLobby(res.lobby);
     });
+
+    socket.on('lobby:configured', ({ source, target, rules }: { source: string; target: string; rules: Rules }) => {
+      setLobby(prev => prev ? { ...prev, source, target, rules } : prev);
+    });
+
+    return () => {
+      socket.off('lobby:configured');
+    };
   }, [code]);
 
   if (!lobby) {
@@ -41,6 +53,26 @@ export default function LobbyPage() {
       </div>
 
       <PlayerList initialPlayers={lobby.players} initialHostId={lobby.hostId} />
+
+      {isHost && (
+        <GameConfig
+          lobbyCode={lobby.code}
+          initialSource={lobby.source}
+          initialTarget={lobby.target}
+          initialRules={lobby.rules || DEFAULT_RULES}
+        />
+      )}
+
+      {!isHost && lobby.source && lobby.target && (
+        <div className="flex flex-col items-center gap-1 text-gray-500 text-sm">
+          <p>
+            <span className="font-medium">{lobby.source}</span>
+            {' > '}
+            <span className="font-medium">{lobby.target}</span>
+          </p>
+          <p>Waiting for the host to start...</p>
+        </div>
+      )}
     </main>
   );
 }
