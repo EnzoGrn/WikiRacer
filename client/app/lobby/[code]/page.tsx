@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { socket } from '@/lib/socket';
 import { PlayerList } from '@/components/lobby/PlayerList';
 import { GameConfig } from '@/components/lobby/GameConfig';
@@ -22,6 +22,8 @@ export default function LobbyPage() {
 
   const canStart = !!lobby?.source && !!lobby?.target;
 
+  const router = useRouter();
+
   const handleStart = () => {
     socket.emit('game:start', { code: lobby?.code }, (res: { ok: boolean; error?: string }) => {
       if (!res.ok) console.error(res.error);
@@ -39,10 +41,20 @@ export default function LobbyPage() {
       setLobby(prev => prev ? { ...prev, source, target, rules } : prev);
     });
 
+    socket.on('game:countdown', ({ count }: { count: number }) => {
+      console.log(`Starting in ${count}...`);
+    });
+
+    socket.on('game:started', () => {
+      router.push(`/game/${code}`);
+    });
+
     return () => {
       socket.off('lobby:configured');
+      socket.off('game:countdown');
+      socket.off('game:started');
     };
-  }, [code]);
+  }, [code, router]);
 
   if (!lobby) {
     return (
