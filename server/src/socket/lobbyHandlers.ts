@@ -84,18 +84,4 @@ export function registerLobbyHandlers(io: Server, socket: Socket) {
       callback({ ok: false, error: (err as Error).message });
     }
   });
-
-  socket.on('game:start', async ({ code }: { code: string }, callback) => {
-  try {
-    const lobby = await getLobby(code);
-    if (!lobby) return callback({ ok: false, error: 'Lobby not found' });
-    if (lobby.hostId !== socket.id) return callback({ ok: false, error: 'Only the host can start the game' });
-    if (!lobby.source || !lobby.target) return callback({ ok: false, error: 'Source and target are required' });
-    if (lobby.status !== 'waiting') return callback({ ok: false, error: 'Game already started' });
-
-    callback({ ok: true });
-  } catch (err) {
-    callback({ ok: false, error: (err as Error).message });
-  }
-});
 }
