@@ -1,5 +1,5 @@
 import { Server, Socket } from 'socket.io';
-import { addPlayer, createLobby } from '../services/lobbyService';
+import { addPlayer, createLobby, getLobby } from '../services/lobbyService';
 import { redis } from '../services/redis';
 
 export function registerLobbyHandlers(io: Server, socket: Socket) {
@@ -33,6 +33,16 @@ export function registerLobbyHandlers(io: Server, socket: Socket) {
                 players: lobby.players,
             });
 
+            callback({ ok: true, lobby });
+        } catch (err) {
+            callback({ ok: false, error: (err as Error).message });
+        }
+    });
+
+    socket.on('lobby:get', async ({ code }: { code: string }, callback) => {
+        try {
+            const lobby = await getLobby(code.toUpperCase());
+            if (!lobby) return callback({ ok: false, error: 'Lobby not found' });
             callback({ ok: true, lobby });
         } catch (err) {
             callback({ ok: false, error: (err as Error).message });
