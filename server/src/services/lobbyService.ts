@@ -86,3 +86,27 @@ export async function getLobby(code: string): Promise<Lobby | null> {
     startedAt: raw.startedAt ? Number(raw.startedAt) : null,
   };
 }
+
+export async function addPlayer(code: string, player: { id: string; name: string }): Promise<Lobby> {
+  const lobby = await getLobby(code);
+  if (!lobby) throw new Error('Lobby not found');
+  if (lobby.status !== 'waiting') throw new Error('Game already started');
+  if (lobby.players.length >= 8) throw new Error('Lobby is full');
+
+  const already = lobby.players.find(p => p.id === player.id);
+  if (already) return lobby;
+
+  lobby.players.push({
+    id: player.id,
+    name: player.name,
+    ready: false,
+    path: [],
+    clicks: 0,
+    finishedAt: null,
+    rank: null,
+  });
+
+  await redis.hset(`lobby:${code}`, 'players', JSON.stringify(lobby.players));
+
+  return lobby;
+}
