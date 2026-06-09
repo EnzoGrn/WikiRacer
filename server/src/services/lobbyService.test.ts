@@ -10,7 +10,7 @@ vi.mock('./redis', () => ({
 }));
 
 import { redis } from './redis';
-import { createLobby, getLobby } from './lobbyService';
+import { addPlayer, createLobby, getLobby } from './lobbyService';
 
 describe('createLobby', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -63,5 +63,98 @@ describe('getLobby', () => {
     expect(lobby).not.toBeNull();
     expect(lobby!.code).toBe('ABC123');
     expect(lobby!.players[0].name).toBe('Jane');
+  });
+});
+
+describe('addPlayer', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('adds a new player to the lobby', async () => {
+    const existingLobby = {
+      code: 'ABC123',
+      hostId: 'player-1',
+      status: 'waiting',
+      source: null,
+      target: null,
+      rules: { noCtrlF: false, noBack: false, noRightClick: false, noCategories: false, timeLimit: null },
+      players: [{ id: 'player-1', name: 'Enzo', ready: false, path: [], clicks: 0, finishedAt: null, rank: null }],
+      startedAt: null,
+    };
+
+    vi.mocked(redis.hgetall).mockResolvedValue({
+      code: 'ABC123',
+      hostId: 'player-1',
+      status: 'waiting',
+      source: '',
+      target: '',
+      rules: JSON.stringify(existingLobby.rules),
+      players: JSON.stringify(existingLobby.players),
+      startedAt: '',
+    });
+
+    const lobby = await addPlayer('ABC123', { id: 'player-2', name: 'Alice' });
+
+    expect(lobby.players).toHaveLength(2);
+    expect(lobby.players[1].name).toBe('Alice');
+    expect(redis.hset).toHaveBeenCalledOnce();
+  });
+
+  it('throws if lobby not found', async () => {
+    vi.mocked(redis.hgetall).mockResolvedValue({});
+    await expect(addPlayer('XXXXXX', { id: 'p1', name: 'Alice' })).rejects.toThrow('Lobby not found');
+  });
+
+  it('throws if lobby is full', async () => {
+    const players = Array.from({ length: 8 }, (_, i) => ({
+      id: `player-${i}`, name: `Player ${i}`, ready: false,
+      path: [], clicks: 0, finishedAt: null, rank: null,
+    }));
+
+    vi.mocked(redis.hgetall).mockResolvedValue({
+      code: 'ABC123',
+      hostId: 'player-0',
+      status: 'waiting',
+      source: '',
+      target: '',
+      rules: JSON.stringify({}),
+      players: JSON.stringify(players),
+      startedAt: '',
+    });
+
+    await expect(addPlayer('ABC123', { id: 'player-8', name: 'Extra' })).rejects.toThrow('Lobby is full');
+  });
+
+  it('returns existing lobby if player already in it (reconnection)', async () => {
+    const players = [{ id: 'player-1', name: 'Enzo', ready: false, path: [], clicks: 0, finishedAt: null, rank: null }];
+
+    vi.mocked(redis.hgetall).mockResolvedValue({
+      code: 'ABC123',
+      hostId: 'player-1',
+      status: 'waiting',
+      source: '',
+      target: '',
+      rules: JSON.stringify({}),
+      players: JSON.stringify(players),
+      startedAt: '',
+    });
+
+    const lobby = await addPlayer('ABC123', { id: 'player-1', name: 'Enzo' });
+    expect(lobby.players).toHaveLength(1);
+    expect(redis.hset).not.toHaveBeenCalled();
+  });
+
+  it('throws if game already started', async () => {
+    vi.mocked(redis.hgetall).mockResolvedValue({
+      code: 'ABC123',
+      hostId: 'player-1',
+      status: 'playing',
+      source: 'Napoleon',
+      target: 'Pizza',
+      rules: JSON.stringify({}),
+      players: JSON.stringify([]),
+      startedAt: '123456',
+    });
+
+    await expect(addPlayer('ABC123', { id: 'player-2', name: 'Alice' })).rejects.toThrow('Game already started');
   });
 });
