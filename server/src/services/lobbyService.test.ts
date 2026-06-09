@@ -12,7 +12,7 @@ vi.mock('./redis', () => ({
 }));
 
 import { redis } from './redis';
-import { addPlayer, createLobby, getLobby, removePlayer } from './lobbyService';
+import { addPlayer, createLobby, getLobby, removePlayer, updateLobbyConfig } from './lobbyService';
 
 describe('createLobby', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -236,5 +236,53 @@ describe('removePlayer', () => {
     vi.mocked(redis.hgetall).mockResolvedValue({});
     const lobby = await removePlayer('XXXXXX', 'player-1');
     expect(lobby).toBeNull();
+  });
+});
+
+describe('updateLobbyConfig', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('updates source, target and rules', async () => {
+    vi.mocked(redis.hgetall).mockResolvedValue({
+      code: 'ABC123',
+      hostId: 'player-1',
+      status: 'waiting',
+      source: '',
+      target: '',
+      rules: JSON.stringify({}),
+      players: JSON.stringify([]),
+      startedAt: '',
+    });
+
+    const rules = { noCtrlF: true, noBack: false, noRightClick: false, noCategories: false, timeLimit: null };
+    const lobby = await updateLobbyConfig('ABC123', { source: 'Napoleon', target: 'Pizza', rules });
+
+    expect(lobby.source).toBe('Napoleon');
+    expect(lobby.target).toBe('Pizza');
+    expect(redis.hset).toHaveBeenCalledOnce();
+  });
+
+  it('throws if lobby not found', async () => {
+    vi.mocked(redis.hgetall).mockResolvedValue({});
+    await expect(
+      updateLobbyConfig('XXXXXX', { source: 'Napoleon', target: 'Pizza', rules: {} as any })
+    ).rejects.toThrow('Lobby not found');
+  });
+
+  it('throws if game already started', async () => {
+    vi.mocked(redis.hgetall).mockResolvedValue({
+      code: 'ABC123',
+      hostId: 'player-1',
+      status: 'playing',
+      source: 'Napoleon',
+      target: 'Pizza',
+      rules: JSON.stringify({}),
+      players: JSON.stringify([]),
+      startedAt: '123456',
+    });
+
+    await expect(
+      updateLobbyConfig('ABC123', { source: 'Napoleon', target: 'Pizza', rules: {} as any })
+    ).rejects.toThrow('Game already started');
   });
 });
