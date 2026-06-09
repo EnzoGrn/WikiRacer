@@ -110,3 +110,24 @@ export async function addPlayer(code: string, player: { id: string; name: string
 
   return lobby;
 }
+
+export async function removePlayer(code: string, playerId: string): Promise<Lobby | null> {
+  const lobby = await getLobby(code);
+  if (!lobby) return null;
+
+  lobby.players = lobby.players.filter(p => p.id !== playerId);
+
+  if (lobby.players.length === 0) {
+    await redis.del(`lobby:${code}`);
+    return null;
+  }
+
+  if (lobby.hostId === playerId) {
+    lobby.hostId = lobby.players[0].id;
+    await redis.hset(`lobby:${code}`, 'hostId', lobby.hostId);
+  }
+
+  await redis.hset(`lobby:${code}`, 'players', JSON.stringify(lobby.players));
+
+  return lobby;
+}
