@@ -40,7 +40,7 @@ export default function LobbyPage() {
         <span className="text-4xl font-mono tracking-widest font-bold">{code}</span>
       </div>
 
-      <PlayerList initialPlayers={lobby.players} hostId={lobby.hostId} />
+      <PlayerList initialPlayers={lobby.players} initialHostId={lobby.hostId} />
     </main>
   );
 }

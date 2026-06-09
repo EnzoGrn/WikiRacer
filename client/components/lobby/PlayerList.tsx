@@ -11,19 +11,21 @@ interface Player {
 
 interface PlayerListProps {
   initialPlayers: Player[];
-  hostId: string;
+  initialHostId: string;
 }
 
-export function PlayerList({ initialPlayers, hostId }: PlayerListProps) {
+export function PlayerList({ initialPlayers, initialHostId }: PlayerListProps) {
   const [players, setPlayers] = useState<Player[]>(initialPlayers);
+  const [hostId, setHostId] = useState<string>(initialHostId);
 
   useEffect(() => {
     socket.on('lobby:playerJoined', ({ players }: { players: Player[] }) => {
       setPlayers(players);
     });
 
-    socket.on('lobby:playerLeft', ({ players }: { players: Player[] }) => {
+    socket.on('lobby:playerLeft', ({ players, newHostId }: { players: Player[]; newHostId: string }) => {
       setPlayers(players);
+      setHostId(newHostId);
     });
 
     return () => {
