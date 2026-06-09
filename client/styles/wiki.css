@@ -1,0 +1,105 @@
+.wiki-content {
+  font-family: 'Linux Libertine', Georgia, serif;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1rem 2rem;
+  color: #202122;
+}
+
+.wiki-content a {
+  color: #3366cc;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.wiki-content a:hover {
+  text-decoration: underline;
+}
+
+.wiki-content a.disabled-link {
+  color: inherit;
+  cursor: default;
+  pointer-events: none;
+  text-decoration: none;
+}
+
+.wiki-content p {
+  margin: 0.5em 0;
+}
+
+.wiki-content h1,
+.wiki-content h2,
+.wiki-content h3,
+.wiki-content h4 {
+  font-family: 'Linux Libertine', Georgia, serif;
+  font-weight: bold;
+  margin: 1em 0 0.25em;
+  border-bottom: 1px solid #a2a9b1;
+  padding-bottom: 0.25em;
+}
+
+.wiki-content h2 { font-size: 1.5rem; }
+.wiki-content h3 { font-size: 1.2rem; border-bottom: none; }
+.wiki-content h4 { font-size: 1rem; border-bottom: none; }
+
+.wiki-content table {
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  margin: 1em 0;
+  max-width: 100%;
+}
+
+.wiki-content table td,
+.wiki-content table th {
+  border: 1px solid #a2a9b1;
+  padding: 0.3em 0.6em;
+  vertical-align: top;
+}
+
+.wiki-content table th {
+  background-color: #eaecf0;
+  font-weight: bold;
+}
+
+.wiki-content img {
+  max-width: 100%;
+  height: auto;
+}
+
+.wiki-content ul,
+.wiki-content ol {
+  padding-left: 1.5em;
+  margin: 0.5em 0;
+}
+
+.wiki-content .infobox {
+  float: right;
+  clear: right;
+  margin: 0 0 1em 1em;
+  border: 1px solid #a2a9b1;
+  background-color: #f8f9fa;
+  font-size: 0.85rem;
+  max-width: 300px;
+}
+
+.wiki-content .thumb {
+  float: right;
+  clear: right;
+  margin: 0 0 1em 1em;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 640px) {
+  .wiki-content {
+    padding: 1rem;
+  }
+
+  .wiki-content .infobox,
+  .wiki-content .thumb {
+    float: none;
+    margin: 0 auto 1em;
+    max-width: 100%;
+  }
+}
