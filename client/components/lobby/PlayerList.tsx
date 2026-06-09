@@ -2,12 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { socket } from '@/lib/socket';
-
-interface Player {
-  id: string;
-  name: string;
-  ready: boolean;
-}
+import type { Player } from '@shared/types';
 
 interface PlayerListProps {
   initialPlayers: Player[];

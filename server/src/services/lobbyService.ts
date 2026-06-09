@@ -1,36 +1,8 @@
 import { redis } from './redis';
 import { generateLobbyCode } from '../utils/generateCode';
+import type { Lobby } from '../../../shared/types';
 
 const LOBBY_TTL = 60 * 60 * 2; // 2 hours
-
-export interface Player {
-  id: string;
-  name: string;
-  ready: boolean;
-  path: string[];
-  clicks: number;
-  finishedAt: number | null;
-  rank: number | null;
-}
-
-export interface Rules {
-  noCtrlF: boolean;
-  noBack: boolean;
-  noRightClick: boolean;
-  noCategories: boolean;
-  timeLimit: number | null;
-}
-
-export interface Lobby {
-  code: string;
-  hostId: string;
-  status: 'waiting' | 'playing' | 'finished';
-  source: string | null;
-  target: string | null;
-  rules: Rules;
-  players: Player[];
-  startedAt: number | null;
-}
 
 // ----
 

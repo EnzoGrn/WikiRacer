@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { socket } from '@/lib/socket';
 import { PlayerList } from '@/components/lobby/PlayerList';
+import { Player } from '@shared/types';
 
 interface Lobby {
   code: string;
   hostId: string;
-  players: { id: string; name: string; ready: boolean }[];
+  players: Player[];
 }
 
 export default function LobbyPage() {
@@ -18,7 +19,6 @@ export default function LobbyPage() {
   useEffect(() => {
     if (!socket.connected) socket.connect();
 
-    // Récupérer l'état du lobby au montage (ex: refresh de page)
     socket.emit('lobby:get', { code }, (res: { ok: boolean; lobby?: Lobby }) => {
       if (res.ok && res.lobby) setLobby(res.lobby);
     });
