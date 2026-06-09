@@ -1,6 +1,7 @@
 import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import { registerHandlers } from './socket/index';
 
 const app = express();
 const httpServer = createServer(app);
@@ -13,6 +14,7 @@ const io = new Server(httpServer, {
 
 io.on('connection', (socket) => {
   console.log(`✅ connected: ${socket.id}`);
+  registerHandlers(io, socket);
 
   socket.on('disconnect', () => {
     console.log(`❌ disconnected: ${socket.id}`);
