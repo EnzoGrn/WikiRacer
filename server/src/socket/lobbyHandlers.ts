@@ -1,6 +1,7 @@
 import { Server, Socket } from 'socket.io';
-import { addPlayer, createLobby, getLobby, removePlayer } from '../services/lobbyService';
+import { addPlayer, createLobby, getLobby, removePlayer, updateLobbyConfig } from '../services/lobbyService';
 import { redis } from '../services/redis';
+import { Rules } from '../../../shared/types';
 
 export function registerLobbyHandlers(io: Server, socket: Socket) {
 
@@ -64,5 +65,23 @@ export function registerLobbyHandlers(io: Server, socket: Socket) {
       players: lobby.players,
       newHostId: lobby.hostId,
     });
+  });
+
+  socket.on('lobby:configure', async (
+    { code, source, target, rules }: { code: string; source: string; target: string; rules: Rules },
+    callback
+  ) => {
+    try {
+      const lobby = await getLobby(code);
+      if (!lobby) return callback({ ok: false, error: 'Lobby not found' });
+      if (lobby.hostId !== socket.id) return callback({ ok: false, error: 'Only the host can configure the lobby' });
+
+      await updateLobbyConfig(code, { source, target, rules });
+
+      io.to(code).emit('lobby:configured', { source, target, rules });
+      callback({ ok: true });
+    } catch (err) {
+      callback({ ok: false, error: (err as Error).message });
+    }
   });
 }

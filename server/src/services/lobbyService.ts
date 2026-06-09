@@ -1,6 +1,6 @@
 import { redis } from './redis';
 import { generateLobbyCode } from '../utils/generateCode';
-import type { Lobby } from '../../../shared/types';
+import type { Lobby, Rules } from '../../../shared/types';
 
 const LOBBY_TTL = 60 * 60 * 2; // 2 hours
 
@@ -102,4 +102,21 @@ export async function removePlayer(code: string, playerId: string): Promise<Lobb
   await redis.hset(`lobby:${code}`, 'players', JSON.stringify(lobby.players));
 
   return lobby;
+}
+
+export async function updateLobbyConfig(
+  code: string,
+  config: { source: string; target: string; rules: Rules }
+): Promise<Lobby> {
+  const lobby = await getLobby(code);
+  if (!lobby) throw new Error('Lobby not found');
+  if (lobby.status !== 'waiting') throw new Error('Game already started');
+
+  await redis.hset(`lobby:${code}`, {
+    source: config.source,
+    target: config.target,
+    rules: JSON.stringify(config.rules),
+  });
+
+  return { ...lobby, ...config };
 }
