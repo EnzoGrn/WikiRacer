@@ -20,6 +20,14 @@ export default function LobbyPage() {
   const [lobby, setLobby] = useState<Lobby | null>(null);
   const isHost = lobby?.hostId === socket.id;
 
+  const canStart = !!lobby?.source && !!lobby?.target;
+
+  const handleStart = () => {
+    socket.emit('game:start', { code: lobby?.code }, (res: { ok: boolean; error?: string }) => {
+      if (!res.ok) console.error(res.error);
+    });
+  };
+
   useEffect(() => {
     if (!socket.connected) socket.connect();
 
@@ -55,12 +63,22 @@ export default function LobbyPage() {
       <PlayerList initialPlayers={lobby.players} initialHostId={lobby.hostId} />
 
       {isHost && (
-        <GameConfig
-          lobbyCode={lobby.code}
-          initialSource={lobby.source}
-          initialTarget={lobby.target}
-          initialRules={lobby.rules || DEFAULT_RULES}
-        />
+        <>
+          <GameConfig
+            lobbyCode={lobby.code}
+            initialSource={lobby.source}
+            initialTarget={lobby.target}
+            initialRules={lobby.rules || DEFAULT_RULES}
+          />
+
+          <button
+            onClick={handleStart}
+            disabled={!canStart}
+            className="w-full max-w-sm bg-black text-white rounded-lg px-4 py-3 font-semibold disabled:opacity-40 hover:bg-gray-800 transition"
+          >
+            {canStart ? 'Start game' : 'Set source and target to start'}
+          </button>
+        </>
       )}
 
       {!isHost && lobby.source && lobby.target && (
