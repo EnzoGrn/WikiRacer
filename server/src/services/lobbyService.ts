@@ -120,3 +120,18 @@ export async function updateLobbyConfig(
 
   return { ...lobby, ...config };
 }
+
+export async function startGame(code: string): Promise<Lobby> {
+  const lobby = await getLobby(code);
+  if (!lobby) throw new Error('Lobby not found');
+  if (lobby.status !== 'waiting') throw new Error('Game already started');
+
+  const startedAt = Date.now();
+
+  await redis.hset(`lobby:${code}`, {
+    status: 'playing',
+    startedAt: startedAt.toString(),
+  });
+
+  return { ...lobby, status: 'playing', startedAt };
+}
