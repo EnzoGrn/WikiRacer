@@ -163,3 +163,67 @@ describe('lobby:configure', () => {
     expect(callback).toHaveBeenCalledWith({ ok: false, error: 'Only the host can configure the lobby' });
   });
 });
+
+describe('game:start', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('calls callback with ok: true if host and config is set', async () => {
+    const socket = createMockSocket('host-socket');
+    const io = {} as any;
+
+    vi.mocked(getLobby).mockResolvedValue({
+      code: 'ABC123',
+      hostId: 'host-socket',
+      status: 'waiting',
+      source: 'Napoleon',
+      target: 'Pizza',
+    } as any);
+
+    registerLobbyHandlers(io, socket as any);
+
+    const callback = vi.fn();
+    await socket._trigger('game:start', { code: 'ABC123' }, callback);
+
+    expect(callback).toHaveBeenCalledWith({ ok: true });
+  });
+
+  it('rejects if not host', async () => {
+    const socket = createMockSocket('other-socket');
+    const io = {} as any;
+
+    vi.mocked(getLobby).mockResolvedValue({
+      code: 'ABC123',
+      hostId: 'host-socket',
+      status: 'waiting',
+      source: 'Napoleon',
+      target: 'Pizza',
+    } as any);
+
+    registerLobbyHandlers(io, socket as any);
+
+    const callback = vi.fn();
+    await socket._trigger('game:start', { code: 'ABC123' }, callback);
+
+    expect(callback).toHaveBeenCalledWith({ ok: false, error: 'Only the host can start the game' });
+  });
+
+  it('rejects if source or target missing', async () => {
+    const socket = createMockSocket('host-socket');
+    const io = {} as any;
+
+    vi.mocked(getLobby).mockResolvedValue({
+      code: 'ABC123',
+      hostId: 'host-socket',
+      status: 'waiting',
+      source: null,
+      target: null,
+    } as any);
+
+    registerLobbyHandlers(io, socket as any);
+
+    const callback = vi.fn();
+    await socket._trigger('game:start', { code: 'ABC123' }, callback);
+
+    expect(callback).toHaveBeenCalledWith({ ok: false, error: 'Source and target are required' });
+  });
+});
