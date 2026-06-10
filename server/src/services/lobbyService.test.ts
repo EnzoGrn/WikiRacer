@@ -79,7 +79,7 @@ describe('addPlayer', () => {
       source: null,
       target: null,
       rules: { noCtrlF: false, noBack: false, noRightClick: false, noCategories: false, timeLimit: null },
-      players: [{ id: 'player-1', name: 'Enzo', ready: false, path: [], clicks: 0, finishedAt: null, rank: null }],
+      players: [{ id: 'player-1', name: 'Jane', ready: false, path: [], clicks: 0, finishedAt: null, rank: null }],
       startedAt: null,
     };
 
@@ -127,7 +127,7 @@ describe('addPlayer', () => {
   });
 
   it('returns existing lobby if player already in it (reconnection)', async () => {
-    const players = [{ id: 'player-1', name: 'Enzo', ready: false, path: [], clicks: 0, finishedAt: null, rank: null }];
+    const players = [{ id: 'player-1', name: 'Jane', ready: false, path: [], clicks: 0, finishedAt: null, rank: null }];
 
     vi.mocked(redis.hgetall).mockResolvedValue({
       code: 'ABC123',
@@ -140,7 +140,7 @@ describe('addPlayer', () => {
       startedAt: '',
     });
 
-    const lobby = await addPlayer('ABC123', { id: 'player-1', name: 'Enzo' });
+    const lobby = await addPlayer('ABC123', { id: 'player-1', name: 'Jane' });
     expect(lobby.players).toHaveLength(1);
     expect(redis.hset).not.toHaveBeenCalled();
   });
@@ -166,7 +166,7 @@ describe('removePlayer', () => {
 
   it('removes a player from the lobby', async () => {
     const players = [
-      { id: 'player-1', name: 'Enzo', ready: false, path: [], clicks: 0, finishedAt: null, rank: null },
+      { id: 'player-1', name: 'Jane', ready: false, path: [], clicks: 0, finishedAt: null, rank: null },
       { id: 'player-2', name: 'Alice', ready: false, path: [], clicks: 0, finishedAt: null, rank: null },
     ];
 
@@ -190,7 +190,7 @@ describe('removePlayer', () => {
 
   it('transfers host when host leaves', async () => {
     const players = [
-      { id: 'player-1', name: 'Enzo', ready: false, path: [], clicks: 0, finishedAt: null, rank: null },
+      { id: 'player-1', name: 'Jane', ready: false, path: [], clicks: 0, finishedAt: null, rank: null },
       { id: 'player-2', name: 'Alice', ready: false, path: [], clicks: 0, finishedAt: null, rank: null },
     ];
 
@@ -212,7 +212,7 @@ describe('removePlayer', () => {
 
   it('returns null and deletes lobby when last player leaves', async () => {
     const players = [
-      { id: 'player-1', name: 'Enzo', ready: false, path: [], clicks: 0, finishedAt: null, rank: null },
+      { id: 'player-1', name: 'Jane', ready: false, path: [], clicks: 0, finishedAt: null, rank: null },
     ];
 
     vi.mocked(redis.hgetall).mockResolvedValue({
