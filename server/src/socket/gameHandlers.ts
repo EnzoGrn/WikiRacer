@@ -31,7 +31,17 @@ export function registerGameHandlers(io: Server, socket: Socket) {
         setTimeout(async () => {
           const current = await getLobby(code);
           if (current?.status !== 'playing') return;
+
           io.to(code).emit('game:timeUp');
+
+          current.players.forEach(p => {
+            if (p.finishedAt === null) p.finishedAt = -1;
+          });
+
+          await updatePlayerPath(code, current.players);
+          const result = await endGame(code, current.players, current.startedAt!);
+          io.to(code).emit('game:finished', result);
+
         }, updatedLobby.rules.timeLimit * 1000);
       }
 
@@ -83,6 +93,29 @@ export function registerGameHandlers(io: Server, socket: Socket) {
       }
     } catch (err) {
       console.error('game:navigate error:', err);
+    }
+  });
+
+  socket.on('game:giveUp', async ({ code }: { code: string }) => {
+    try {
+      const lobby = await getLobby(code);
+      if (!lobby || lobby.status !== 'playing') return;
+
+      const player = lobby.players.find(p => p.id === socket.id);
+      if (!player || player.finishedAt) return;
+
+      player.finishedAt = -1; // -1 = gave up
+      await updatePlayerPath(code, lobby.players);
+
+      io.to(code).emit('game:playerGaveUp', { playerId: socket.id });
+
+      const allDone = lobby.players.every(p => p.finishedAt !== null);
+      if (allDone) {
+        const result = await endGame(code, lobby.players, lobby.startedAt!);
+        io.to(code).emit('game:finished', result);
+      }
+    } catch (err) {
+      console.error('game:giveUp error:', err);
     }
   });
 }
