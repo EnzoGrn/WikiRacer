@@ -4,6 +4,13 @@ import { useEffect, useState } from 'react';
 import { socket } from '@/lib/socket';
 import type { Player } from '@shared/types';
 
+interface GaveUpEntry {
+  id: string;
+  name: string;
+  clicks: number;
+  path: string[];
+}
+
 interface PlayerState {
   id: string;
   name: string;
@@ -46,6 +53,7 @@ export function useGame({ initialPlayers, source }: UseGameProps) {
   );
   const [rankings, setRankings] = useState<RankingEntry[]>([]);
   const [gameStatus, setGameStatus] = useState<'playing' | 'finished'>('playing');
+  const [gaveUp, setGaveUp] = useState<GaveUpEntry[]>([]);
 
   useEffect(() => {
     socket.on('game:playerMoved', ({ playerId, currentPage, clicks }: {
@@ -77,8 +85,9 @@ export function useGame({ initialPlayers, source }: UseGameProps) {
       ));
     });
 
-    socket.on('game:finished', ({ rankings }: { rankings: RankingEntry[] }) => {
+    socket.on('game:finished', ({ rankings, gaveUp }: { rankings: RankingEntry[]; gaveUp: GaveUpEntry[] }) => {
       setRankings(rankings);
+      setGaveUp(gaveUp);
       setGameStatus('finished');
     });
 
@@ -90,5 +99,5 @@ export function useGame({ initialPlayers, source }: UseGameProps) {
     };
   }, []);
 
-  return { players, rankings, gameStatus };
+  return { players, rankings, gaveUp, gameStatus };
 }

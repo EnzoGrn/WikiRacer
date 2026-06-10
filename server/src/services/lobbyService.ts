@@ -153,7 +153,12 @@ export async function endGame(code: string, players: Player[], startedAt: number
 
   const gaveUp = players
     .filter(p => p.finishedAt === -1)
-    .map(p => p.name);
+    .map(p => ({
+      id: p.id,
+      name: p.name,
+      clicks: p.clicks,
+      path: p.path,
+    }));
 
   return { rankings, gaveUp };
 }

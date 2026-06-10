@@ -47,7 +47,7 @@ function GameView({ lobby, code }: { lobby: Lobby; code: string }) {
     onNavigate: handleNavigate,
   });
 
-  const { players, gameStatus, rankings } = useGame({
+  const { players, gameStatus, rankings, gaveUp } = useGame({
     initialPlayers: lobby.players,
     source: lobby.source!,
   });
@@ -66,7 +66,7 @@ function GameView({ lobby, code }: { lobby: Lobby; code: string }) {
     return (
       <Results
         rankings={rankings}
-        gaveUp={[]}
+        gaveUp={gaveUp}
         lobbyCode={code}
         hostId={lobby.hostId}
         onReplay={() => router.push(`/lobby/${code}`)}
