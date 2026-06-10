@@ -1,14 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { socket } from '@/lib/socket';
 import { Countdown } from '@/components/game/Countdown';
+import { PlayerTracker } from '@/components/game/PlayerTracker';
+import { Results } from '@/components/game/Results';
 import { WikiPage } from '@/components/game/WikiPage';
 import { useWikiGame } from '@/hooks/useWikiGame';
 import type { Lobby } from '@shared/types';
 import { useGame } from '@/hooks/useGame';
-import { PlayerTracker } from '@/components/game/PlayerTracker';
 
 export default function GamePage() {
   const { code } = useParams<{ code: string }>();
@@ -34,6 +35,8 @@ export default function GamePage() {
 }
 
 function GameView({ lobby, code }: { lobby: Lobby; code: string }) {
+  const router = useRouter();
+
   const handleNavigate = (title: string) => {
     socket.emit('game:navigate', { code, page: title });
   };
@@ -44,10 +47,32 @@ function GameView({ lobby, code }: { lobby: Lobby; code: string }) {
     onNavigate: handleNavigate,
   });
 
-  const { players } = useGame({
+  const { players, gameStatus, rankings } = useGame({
     initialPlayers: lobby.players,
     source: lobby.source!,
   });
+
+  useEffect(() => {
+    socket.on('game:reset', () => {
+      router.push(`/lobby/${code}`);
+    });
+
+    return () => {
+      socket.off('game:reset');
+    };
+  }, [code, router]);
+
+  if (gameStatus === 'finished') {
+    return (
+      <Results
+        rankings={rankings}
+        gaveUp={[]}
+        lobbyCode={code}
+        hostId={lobby.hostId}
+        onReplay={() => router.push(`/lobby/${code}`)}
+      />
+    );
+  }
 
   return (
     <main className="flex h-screen overflow-hidden">
