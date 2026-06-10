@@ -11,6 +11,7 @@ import { useWikiGame } from '@/hooks/useWikiGame';
 import type { Lobby } from '@shared/types';
 import { useGame } from '@/hooks/useGame';
 import { useRules } from '@/hooks/useRules';
+import { GameHUD } from '@/components/game/GameHUD';
 
 export default function GamePage() {
   const { code } = useParams<{ code: string }>();
@@ -87,6 +88,13 @@ function GameView({ lobby, code }: { lobby: Lobby; code: string }) {
           <p className="font-bold text-lg">{lobby.target}</p>
         </div>
 
+        <div>
+          <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Current page</p>
+          <p className="text-sm font-medium truncate">
+            {loading ? <span className="text-gray-400">Loading...</span> : currentTitle}
+          </p>
+        </div>
+
         <PlayerTracker players={players} target={lobby.target!} />
 
         {canGoBack && (
@@ -102,10 +110,12 @@ function GameView({ lobby, code }: { lobby: Lobby; code: string }) {
       {/* Wikipedia content */}
       <div className="flex-1 overflow-y-auto">
         {/* HUD */}
-        <div className="sticky top-0 z-40 bg-white border-b flex items-center justify-between px-4 py-2 text-sm">
-          <span className="font-medium truncate max-w-[300px]">{currentTitle}</span>
-          {loading && <span className="text-gray-400 text-xs">Loading...</span>}
-        </div>
+        <GameHUD
+          target={lobby.target!}
+          clicks={players.find(p => p.id === socket.id)?.clicks ?? 0}
+          timeLimit={lobby.rules?.timeLimit ?? null}
+          startedAt={lobby.startedAt}
+        />
 
         {error && <div className="text-center py-8 text-red-500">{error}</div>}
 
