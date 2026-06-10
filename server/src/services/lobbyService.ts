@@ -1,6 +1,6 @@
 import { redis } from './redis';
 import { generateLobbyCode } from '../utils/generateCode';
-import type { Lobby, Rules } from '../../../shared/types';
+import type { Lobby, Player, Rules } from '../../../shared/types';
 
 const LOBBY_TTL = 60 * 60 * 2; // 2 hours
 
@@ -134,4 +134,30 @@ export async function startGame(code: string): Promise<Lobby> {
   });
 
   return { ...lobby, status: 'playing', startedAt };
+}
+
+export async function endGame(code: string, players: Player[], startedAt: number) {
+  await redis.hset(`lobby:${code}`, 'status', 'finished');
+
+  const rankings = players
+    .filter(p => p.finishedAt && p.finishedAt > 0)
+    .sort((a, b) => a.finishedAt! - b.finishedAt!)
+    .map((p, i) => ({
+      rank: i + 1,
+      id: p.id,
+      name: p.name,
+      clicks: p.clicks,
+      time: p.finishedAt! - startedAt,
+      path: p.path,
+    }));
+
+  const gaveUp = players
+    .filter(p => p.finishedAt === -1)
+    .map(p => p.name);
+
+  return { rankings, gaveUp };
+}
+
+export async function updatePlayerPath(code: string, players: Player[]): Promise<void> {
+  await redis.hset(`lobby:${code}`, 'players', JSON.stringify(players));
 }
