@@ -11,9 +11,16 @@ interface RankingEntry {
   path: string[];
 }
 
+interface GaveUpEntry {
+  id: string;
+  name: string;
+  clicks: number;
+  path: string[];
+}
+
 interface ResultsProps {
   rankings: RankingEntry[];
-  gaveUp: string[];
+  gaveUp: GaveUpEntry[];
   lobbyCode: string;
   hostId: string;
   onReplay: () => void;
@@ -96,15 +103,44 @@ export function Results({ rankings, gaveUp, lobbyCode, hostId, onReplay }: Resul
 
         {/* Gave up */}
         {gaveUp.length > 0 && (
-          <div className="border border-dashed rounded-xl p-4">
-            <p className="text-sm text-gray-400 font-medium mb-2">Gave up</p>
-            <div className="flex gap-2 flex-wrap">
-              {gaveUp.map(name => (
-                <span key={name} className="text-sm text-gray-500 bg-gray-100 rounded px-2 py-0.5">
-                  {name}
-                </span>
-              ))}
-            </div>
+          <div className="flex flex-col gap-3 w-full max-w-lg">
+            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
+              Did not finish
+            </h2>
+
+            {gaveUp.map(entry => (
+              <div
+                key={entry.id}
+                className={`border border-dashed rounded-xl p-4 flex flex-col gap-2 ${entry.id === socket.id ? 'border-gray-400 bg-gray-50' : ''
+                  }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-400">—</span>
+                    <span className="font-semibold text-gray-600">
+                      {entry.name}
+                      {entry.id === socket.id && (
+                        <span className="ml-2 text-xs text-gray-400 font-normal">you</span>
+                      )}
+                    </span>
+                  </div>
+                  <span className="text-sm text-gray-400">{entry.clicks} clicks</span>
+                </div>
+
+                {entry.path.length > 0 && (
+                  <div className="flex items-center gap-1 flex-wrap text-xs text-gray-400">
+                    {entry.path.map((page, i) => (
+                      <span key={i} className="flex items-center gap-1">
+                        <span className="bg-gray-100 rounded px-1.5 py-0.5 text-gray-500">
+                          {page}
+                        </span>
+                        {i < entry.path.length - 1 && <span>→</span>}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>
