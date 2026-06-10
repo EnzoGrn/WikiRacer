@@ -36,3 +36,7 @@ services:
 
 volumes:
   redis_data:
+
+networks:
+  proxy:
+    external: true
