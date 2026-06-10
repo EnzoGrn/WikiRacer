@@ -38,6 +38,17 @@ export default function GamePage() {
 
 function GameView({ lobby, code }: { lobby: Lobby; code: string }) {
   const router = useRouter();
+  const [startedAt, setStartedAt] = useState<number | null>(lobby.startedAt);
+
+  useEffect(() => {
+    socket.on('game:started', ({ startedAt }: { startedAt: number }) => {
+      setStartedAt(startedAt);
+    });
+
+    return () => {
+      socket.off('game:started');
+    };
+  }, []);
 
   useRules(lobby.rules);
 
@@ -114,7 +125,7 @@ function GameView({ lobby, code }: { lobby: Lobby; code: string }) {
           target={lobby.target!}
           clicks={players.find(p => p.id === socket.id)?.clicks ?? 0}
           timeLimit={lobby.rules?.timeLimit ?? null}
-          startedAt={lobby.startedAt}
+          startedAt={startedAt}
         />
 
         {error && <div className="text-center py-8 text-red-500">{error}</div>}
