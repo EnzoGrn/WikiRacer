@@ -10,6 +10,7 @@ import { WikiPage } from '@/components/game/WikiPage';
 import { useWikiGame } from '@/hooks/useWikiGame';
 import type { Lobby } from '@shared/types';
 import { useGame } from '@/hooks/useGame';
+import { useRules } from '@/hooks/useRules';
 
 export default function GamePage() {
   const { code } = useParams<{ code: string }>();
@@ -36,6 +37,8 @@ export default function GamePage() {
 
 function GameView({ lobby, code }: { lobby: Lobby; code: string }) {
   const router = useRouter();
+
+  useRules(lobby.rules);
 
   const handleNavigate = (title: string) => {
     socket.emit('game:navigate', { code, page: title });
