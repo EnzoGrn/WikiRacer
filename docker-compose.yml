@@ -1,10 +1,38 @@
 services:
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
+    restart: unless-stopped
     volumes:
       - redis_data:/data
+    networks:
+      - proxy
+
+  server:
+    build:
+      context: ./
+      dockerfile: server/Dockerfile
+    restart: unless-stopped
+    environment:
+      PORT: 3001
+      CLIENT_URL: https://wikiracer.enzogarnier.fr
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: production
+    depends_on:
+      - redis
+    networks:
+      - proxy
+
+  client:
+    build:
+      context: ./
+      dockerfile: client/Dockerfile
+      args:
+        NEXT_PUBLIC_SERVER_URL: https://api.wikiracer.enzogarnier.fr
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_SERVER_URL: https://api.wikiracer.enzogarnier.fr
+    networks:
+      - proxy
 
 volumes:
   redis_data:
