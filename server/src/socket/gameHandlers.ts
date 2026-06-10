@@ -1,5 +1,5 @@
 import { Server, Socket } from 'socket.io';
-import { endGame, getLobby, startGame, updatePlayerPath } from '../services/lobbyService';
+import { endGame, getLobby, resetLobby, startGame, updatePlayerPath } from '../services/lobbyService';
 import { sleep } from '../utils/sleep';
 import { normalizeTitle } from '../utils/normalizeTitle';
 
@@ -80,7 +80,10 @@ export function registerGameHandlers(io: Server, socket: Socket) {
         });
 
         const allDone = lobby.players.every(p => p.finishedAt !== null);
-        if (allDone) await endGame(code, lobby.players, lobby.startedAt!);
+        if (allDone) {
+          const result = await endGame(code, lobby.players, lobby.startedAt!);
+          io.to(code).emit('game:finished', result);
+        }
 
       } else {
         await updatePlayerPath(code, lobby.players);
@@ -116,6 +119,21 @@ export function registerGameHandlers(io: Server, socket: Socket) {
       }
     } catch (err) {
       console.error('game:giveUp error:', err);
+    }
+  });
+
+  socket.on('game:reset', async ({ code }: { code: string }, callback) => {
+    try {
+      const lobby = await getLobby(code);
+      if (!lobby) return callback({ ok: false, error: 'Lobby not found' });
+      if (lobby.hostId !== socket.id) return callback({ ok: false, error: 'Only the host can reset' });
+      if (lobby.status !== 'finished') return callback({ ok: false, error: 'Game is not finished' });
+
+      await resetLobby(code);
+      io.to(code).emit('game:reset');
+      callback({ ok: true });
+    } catch (err) {
+      callback({ ok: false, error: (err as Error).message });
     }
   });
 }

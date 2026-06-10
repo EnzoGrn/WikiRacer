@@ -161,3 +161,33 @@ export async function endGame(code: string, players: Player[], startedAt: number
 export async function updatePlayerPath(code: string, players: Player[]): Promise<void> {
   await redis.hset(`lobby:${code}`, 'players', JSON.stringify(players));
 }
+
+export async function resetLobby(code: string): Promise<Lobby> {
+  const lobby = await getLobby(code);
+  if (!lobby) throw new Error('Lobby not found');
+
+  const resetPlayers = lobby.players.map(p => ({
+    ...p,
+    path: [],
+    clicks: 0,
+    finishedAt: null,
+    rank: null,
+  }));
+
+  await redis.hset(`lobby:${code}`, {
+    status: 'waiting',
+    source: '',
+    target: '',
+    startedAt: '',
+    players: JSON.stringify(resetPlayers),
+  });
+
+  return {
+    ...lobby,
+    status: 'waiting',
+    source: null,
+    target: null,
+    startedAt: null,
+    players: resetPlayers,
+  };
+}
