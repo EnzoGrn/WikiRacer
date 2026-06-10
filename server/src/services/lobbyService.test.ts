@@ -12,7 +12,7 @@ vi.mock('./redis', () => ({
 }));
 
 import { redis } from './redis';
-import { addPlayer, createLobby, getLobby, removePlayer, startGame, updateLobbyConfig } from './lobbyService';
+import { addPlayer, createLobby, getLobby, removePlayer, resetLobby, startGame, updateLobbyConfig } from './lobbyService';
 
 describe('createLobby', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -327,5 +327,42 @@ describe('startGame', () => {
     });
 
     await expect(startGame('ABC123')).rejects.toThrow('Game already started');
+  });
+});
+
+describe('resetLobby', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('resets lobby to waiting with clean players', async () => {
+    const players = [
+      { id: 'p1', name: 'Enzo', ready: false, path: ['Napoleon', 'Pizza'], clicks: 3, finishedAt: 123, rank: 1 },
+    ];
+
+    vi.mocked(redis.hgetall).mockResolvedValue({
+      code: 'ABC123',
+      hostId: 'p1',
+      status: 'finished',
+      source: 'Napoleon',
+      target: 'Pizza',
+      rules: JSON.stringify({}),
+      players: JSON.stringify(players),
+      startedAt: '123456',
+    });
+
+    const lobby = await resetLobby('ABC123');
+
+    expect(lobby.status).toBe('waiting');
+    expect(lobby.source).toBeNull();
+    expect(lobby.target).toBeNull();
+    expect(lobby.startedAt).toBeNull();
+    expect(lobby.players[0].clicks).toBe(0);
+    expect(lobby.players[0].path).toEqual([]);
+    expect(lobby.players[0].finishedAt).toBeNull();
+    expect(lobby.players[0].rank).toBeNull();
+  });
+
+  it('throws if lobby not found', async () => {
+    vi.mocked(redis.hgetall).mockResolvedValue({});
+    await expect(resetLobby('XXXXXX')).rejects.toThrow('Lobby not found');
   });
 });
