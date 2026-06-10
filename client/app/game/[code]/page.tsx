@@ -7,6 +7,8 @@ import { Countdown } from '@/components/game/Countdown';
 import { WikiPage } from '@/components/game/WikiPage';
 import { useWikiGame } from '@/hooks/useWikiGame';
 import type { Lobby } from '@shared/types';
+import { useGame } from '@/hooks/useGame';
+import { PlayerTracker } from '@/components/game/PlayerTracker';
 
 export default function GamePage() {
   const { code } = useParams<{ code: string }>();
@@ -42,35 +44,47 @@ function GameView({ lobby, code }: { lobby: Lobby; code: string }) {
     onNavigate: handleNavigate,
   });
 
+  const { players } = useGame({
+    initialPlayers: lobby.players,
+    source: lobby.source!,
+  });
+
   return (
-    <main className="min-h-screen bg-white">
-      <Countdown />
+    <main className="flex h-screen overflow-hidden">
 
-      <div className="sticky top-0 z-40 bg-white border-b flex items-center justify-between px-4 py-2 text-sm">
-        <div className="flex items-center gap-3">
-          {canGoBack && (
-            <button
-              onClick={goBack}
-              className="text-gray-500 hover:text-black transition"
-            >
-              ← Back
-            </button>
-          )}
-          <span className="font-medium truncate max-w-[200px]">{currentTitle}</span>
-          {loading && <span className="text-gray-400">Loading...</span>}
+      {/* Sidebar */}
+      <aside className="w-64 flex-shrink-0 border-r flex flex-col gap-4 p-4 overflow-y-auto">
+        <div>
+          <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Target</p>
+          <p className="font-bold text-lg">{lobby.target}</p>
         </div>
 
-        <div className="flex items-center gap-2 text-gray-500">
-          <span>→</span>
-          <span className="font-medium text-black">{lobby.target}</span>
+        <PlayerTracker players={players} target={lobby.target!} />
+
+        {canGoBack && (
+          <button
+            onClick={goBack}
+            className="mt-auto text-sm text-gray-500 hover:text-black transition text-left"
+          >
+            ← Back
+          </button>
+        )}
+      </aside>
+
+      {/* Wikipedia content */}
+      <div className="flex-1 overflow-y-auto">
+        {/* HUD */}
+        <div className="sticky top-0 z-40 bg-white border-b flex items-center justify-between px-4 py-2 text-sm">
+          <span className="font-medium truncate max-w-[300px]">{currentTitle}</span>
+          {loading && <span className="text-gray-400 text-xs">Loading...</span>}
         </div>
+
+        {error && <div className="text-center py-8 text-red-500">{error}</div>}
+
+        <WikiPage html={html} onNavigate={navigate} />
       </div>
 
-      {error && (
-        <div className="text-center py-8 text-red-500">{error}</div>
-      )}
-
-      <WikiPage html={html} onNavigate={navigate} />
+      <Countdown />
     </main>
   );
 }
