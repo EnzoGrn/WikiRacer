@@ -96,3 +96,107 @@ describe('game:start', () => {
     expect(mockEmit).not.toHaveBeenCalled();
   });
 });
+
+vi.mock('../services/lobbyService', () => ({
+  getLobby: vi.fn(),
+  startGame: vi.fn(),
+  updatePlayerPath: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('../utils/normalizeTitle', () => ({
+  normalizeTitle: vi.fn((title: string) => title.toLowerCase().trim()),
+}));
+
+describe('game:navigate', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('emits game:playerMoved when page is not the target', async () => {
+    const socket = createMockSocket('player-1');
+    const mockEmit = vi.fn();
+    const io = { to: vi.fn().mockReturnValue({ emit: mockEmit }) } as any;
+
+    vi.mocked(getLobby).mockResolvedValue({
+      code: 'ABC123',
+      status: 'playing',
+      source: 'Napoleon',
+      target: 'Pizza',
+      startedAt: Date.now(),
+      players: [
+        { id: 'player-1', name: 'Jane', path: [], clicks: 0, finishedAt: null, rank: null },
+      ],
+    } as any);
+
+    registerGameHandlers(io, socket as any);
+    await socket._trigger('game:navigate', { code: 'ABC123', page: 'France' });
+
+    expect(mockEmit).toHaveBeenCalledWith('game:playerMoved', expect.objectContaining({
+      playerId: 'player-1',
+      currentPage: 'France',
+      clicks: 1,
+    }));
+  });
+
+  it('emits game:playerFinished when page matches target', async () => {
+    const socket = createMockSocket('player-1');
+    const mockEmit = vi.fn();
+    const io = { to: vi.fn().mockReturnValue({ emit: mockEmit }) } as any;
+
+    vi.mocked(getLobby).mockResolvedValue({
+      code: 'ABC123',
+      status: 'playing',
+      source: 'Napoleon',
+      target: 'pizza',
+      startedAt: Date.now() - 5000,
+      players: [
+        { id: 'player-1', name: 'Jane', path: [], clicks: 0, finishedAt: null, rank: null },
+      ],
+    } as any);
+
+    registerGameHandlers(io, socket as any);
+    await socket._trigger('game:navigate', { code: 'ABC123', page: 'pizza' });
+
+    expect(mockEmit).toHaveBeenCalledWith('game:playerFinished', expect.objectContaining({
+      playerId: 'player-1',
+      rank: 1,
+      clicks: 1,
+    }));
+  });
+
+  it('does nothing if game is not playing', async () => {
+    const socket = createMockSocket('player-1');
+    const mockEmit = vi.fn();
+    const io = { to: vi.fn().mockReturnValue({ emit: mockEmit }) } as any;
+
+    vi.mocked(getLobby).mockResolvedValue({
+      code: 'ABC123',
+      status: 'waiting',
+      players: [],
+    } as any);
+
+    registerGameHandlers(io, socket as any);
+    await socket._trigger('game:navigate', { code: 'ABC123', page: 'France' });
+
+    expect(mockEmit).not.toHaveBeenCalled();
+  });
+
+  it('does nothing if player already finished', async () => {
+    const socket = createMockSocket('player-1');
+    const mockEmit = vi.fn();
+    const io = { to: vi.fn().mockReturnValue({ emit: mockEmit }) } as any;
+
+    vi.mocked(getLobby).mockResolvedValue({
+      code: 'ABC123',
+      status: 'playing',
+      target: 'pizza',
+      startedAt: Date.now(),
+      players: [
+        { id: 'player-1', name: 'Jane', path: ['pizza'], clicks: 1, finishedAt: 123456, rank: 1 },
+      ],
+    } as any);
+
+    registerGameHandlers(io, socket as any);
+    await socket._trigger('game:navigate', { code: 'ABC123', page: 'France' });
+
+    expect(mockEmit).not.toHaveBeenCalled();
+  });
+});
