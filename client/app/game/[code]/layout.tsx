@@ -3,10 +3,11 @@ import type { Metadata } from 'next';
 export async function generateMetadata({
   params,
 }: {
-  params: { code: string };
+  params: Promise<{ code: string }>;
 }): Promise<Metadata> {
+  const { code } = await params;
   return {
-    title: `WikiRacer | ${params.code}`,
+    title: `WikiRacer | ${code}`,
   };
 }
 
