@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { socket } from '@/lib/socket';
 import type { Rules } from '@shared/types';
+import { validateWikiPage } from '@/services/wikipedia';
 
 interface GameConfigProps {
   lobbyCode: string;
@@ -26,12 +27,15 @@ export function GameConfig({ lobbyCode, initialSource, initialTarget, initialRul
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [validating, setValidating] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
   const toggleRule = (key: keyof Omit<Rules, 'timeLimit'>) => {
     setRules(prev => ({ ...prev, [key]: !prev[key] }));
     setSaved(false);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!source.trim() || !target.trim()) {
       setError('Source and target pages are required');
       return;
@@ -42,6 +46,28 @@ export function GameConfig({ lobbyCode, initialSource, initialTarget, initialRul
     }
 
     setError(null);
+    setValidationError(null);
+    setValidating(true);
+
+    const [sourceValid, targetValid] = await Promise.all([
+      validateWikiPage(source.trim()),
+      validateWikiPage(target.trim()),
+    ]);
+
+    setValidating(false);
+
+    if (!sourceValid && !targetValid) {
+      setValidationError('Neither page exists on Wikipedia');
+      return;
+    }
+    if (!sourceValid) {
+      setValidationError(`"${source}" does not exist on Wikipedia`);
+      return;
+    }
+    if (!targetValid) {
+      setValidationError(`"${target}" does not exist on Wikipedia`);
+      return;
+    }
 
     socket.emit('lobby:configure', {
       code: lobbyCode,
@@ -98,9 +124,8 @@ export function GameConfig({ lobbyCode, initialSource, initialTarget, initialRul
           <button
             key={key}
             onClick={() => toggleRule(key)}
-            className={`flex items-center justify-between border rounded-lg px-4 py-3 transition text-left ${
-              rules[key] ? 'border-black bg-black text-white' : 'hover:bg-gray-50'
-            }`}
+            className={`flex items-center justify-between border rounded-lg px-4 py-3 transition text-left ${rules[key] ? 'border-black bg-black text-white' : 'hover:bg-gray-50'
+              }`}
           >
             <div>
               <p className="font-medium text-sm">{label}</p>
@@ -108,9 +133,8 @@ export function GameConfig({ lobbyCode, initialSource, initialTarget, initialRul
                 {description}
               </p>
             </div>
-            <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 ${
-              rules[key] ? 'bg-white border-white' : 'border-gray-300'
-            }`} />
+            <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 ${rules[key] ? 'bg-white border-white' : 'border-gray-300'
+              }`} />
           </button>
         ))}
 
@@ -136,13 +160,16 @@ export function GameConfig({ lobbyCode, initialSource, initialTarget, initialRul
         </div>
       </div>
 
-      {error && <p className="text-red-500 text-sm">{error}</p>}
+      {(error || validationError) && (
+        <p className="text-red-500 text-sm">{error || validationError}</p>
+      )}
 
       <button
         onClick={handleSave}
-        className="bg-black text-white rounded-lg px-4 py-2 font-medium hover:bg-gray-800 transition"
+        disabled={validating}
+        className="bg-black text-white rounded-lg px-4 py-2 font-medium hover:bg-gray-800 transition disabled:opacity-40"
       >
-        {saved ? '✓ Saved' : 'Save settings'}
+        {validating ? 'Checking pages...' : saved ? '✓ Saved' : 'Save settings'}
       </button>
     </div>
   );

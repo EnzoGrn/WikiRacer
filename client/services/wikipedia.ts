@@ -61,3 +61,12 @@ export function normalizeTitle(title: string): string {
     .trim()
     .toLowerCase();
 }
+
+export async function validateWikiPage(title: string): Promise<boolean> {
+  const encoded = encodeURIComponent(title.replace(/ /g, '_'));
+  const res = await fetch(
+    `https://fr.wikipedia.org/api/rest_v1/page/summary/${encoded}`,
+    { headers: { 'Api-User-Agent': USER_AGENT } }
+  );
+  return res.ok;
+}
