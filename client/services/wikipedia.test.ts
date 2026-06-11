@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { isInternalWikiLink, extractTitleFromHref, normalizeTitle, sanitizeWikiHtml } from './wikipedia';
+import { describe, it, expect, vi } from 'vitest';
+import { isInternalWikiLink, extractTitleFromHref, normalizeTitle, sanitizeWikiHtml, fetchWikiPage } from './wikipedia';
 
 describe('isInternalWikiLink', () => {
   it('accepts internal ./ links', () => {
@@ -81,5 +81,35 @@ describe('sanitizeWikiHtml', () => {
     const html = '<section><p>Napoleon was an emperor.</p></section>';
     const result = sanitizeWikiHtml(html);
     expect(result).toContain('Napoleon was an emperor.');
+  });
+});
+
+describe('fetchWikiPage', () => {
+  it('throws a specific message on 404', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+    });
+
+    await expect(fetchWikiPage('UnknownPage')).rejects.toThrow('Page not found: "UnknownPage"');
+  });
+
+  it('throws a generic message on other errors', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+    });
+
+    await expect(fetchWikiPage('Napoleon')).rejects.toThrow('Failed to load page: "Napoleon" (500)');
+  });
+
+  it('returns sanitized html on success', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: vi.fn().mockResolvedValue('<section><p>Napoleon content</p></section>'),
+    });
+
+    const html = await fetchWikiPage('Napoleon');
+    expect(html).toContain('Napoleon content');
   });
 });
