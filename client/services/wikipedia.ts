@@ -7,7 +7,8 @@ export async function fetchWikiPage(title: string): Promise<string> {
     headers: { 'Api-User-Agent': USER_AGENT },
   });
 
-  if (!res.ok) throw new Error(`Page not found: ${title}`);
+  if (res.status === 404) throw new Error(`Page not found: "${title}"`);
+  if (!res.ok) throw new Error(`Failed to load page: "${title}" (${res.status})`);
 
   const html = await res.text();
   return sanitizeWikiHtml(html);

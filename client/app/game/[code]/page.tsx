@@ -128,7 +128,21 @@ function GameView({ lobby, code }: { lobby: Lobby; code: string }) {
           startedAt={startedAt}
         />
 
-        {error && <div className="text-center py-8 text-red-500">{error}</div>}
+        {error && (
+          <div className="flex flex-col items-center justify-center gap-4 py-24 text-center px-8">
+            <span className="text-5xl">🔍</span>
+            <h2 className="text-xl font-bold">Page not found</h2>
+            <p className="text-gray-500 text-sm max-w-sm">{error}</p>
+            {canGoBack && (
+              <button
+                onClick={goBack}
+                className="bg-black text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-800 transition"
+              >
+                ← Go back
+              </button>
+            )}
+          </div>
+        )}
 
         <WikiPage html={html} onNavigate={navigate} />
       </div>
