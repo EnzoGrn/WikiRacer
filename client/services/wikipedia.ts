@@ -70,3 +70,18 @@ export async function validateWikiPage(title: string): Promise<boolean> {
   );
   return res.ok;
 }
+
+export async function searchWikiPages(query: string): Promise<string[]> {
+  if (!query.trim()) return [];
+
+  const encoded = encodeURIComponent(query);
+  const res = await fetch(
+    `https://fr.wikipedia.org/w/api.php?action=opensearch&search=${encoded}&limit=5&format=json&origin=*`,
+    { headers: { 'Api-User-Agent': USER_AGENT } }
+  );
+
+  if (!res.ok) return [];
+
+  const data = await res.json();
+  return data[1] as string[]; // [query, [suggestions], [descriptions], [urls]]
+}

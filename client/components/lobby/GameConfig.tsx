@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { socket } from '@/lib/socket';
 import type { Rules } from '@shared/types';
 import { validateWikiPage } from '@/services/wikipedia';
+import { WikiSearchInput } from './WikiSearchInput';
 
 interface GameConfigProps {
   lobbyCode: string;
@@ -89,24 +90,21 @@ export function GameConfig({ lobbyCode, initialSource, initialTarget, initialRul
       {/* Pages */}
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium">Start page</label>
-          <input
-            type="text"
+          <WikiSearchInput
+            label="Start page"
             placeholder="e.g. Napoleon"
             value={source}
-            onChange={(e) => { setSource(e.target.value); setSaved(false); }}
-            className="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-black"
+            onChange={(val) => { setSource(val); setSaved(false); }}
           />
+
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium">Target page</label>
-          <input
-            type="text"
+          <WikiSearchInput
+            label="Target page"
             placeholder="e.g. Pizza"
             value={target}
-            onChange={(e) => { setTarget(e.target.value); setSaved(false); }}
-            className="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-black"
+            onChange={(val) => { setTarget(val); setSaved(false); }}
           />
         </div>
       </div>
