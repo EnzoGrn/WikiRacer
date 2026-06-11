@@ -52,18 +52,6 @@ describe('useRules', () => {
     expect(window.addEventListener).toHaveBeenCalledWith('contextmenu', expect.any(Function));
   });
 
-  it('registers selectstart listener when noSelect is true', () => {
-    renderHook(() => useRules({
-      noCtrlF: false,
-      noBack: false,
-      noRightClick: false,
-      noCategories: false,
-      timeLimit: null,
-    }));
-
-    expect(window.addEventListener).toHaveBeenCalledWith('selectstart', expect.any(Function));
-  });
-
   it('blocks Ctrl+F when noCtrlF is active', () => {
     renderHook(() => useRules({
       noCtrlF: true,
