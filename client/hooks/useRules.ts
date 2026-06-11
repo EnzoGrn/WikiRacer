@@ -23,4 +23,14 @@ export function useRules(rules: Rules | null) {
     return () => window.removeEventListener('contextmenu', handler);
   }, [rules?.noRightClick]);
 
+  // No refresh (Ctrl+R / F5)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'r') e.preventDefault();
+      if (e.key === 'F5') e.preventDefault();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
 }
