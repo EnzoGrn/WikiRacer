@@ -19,6 +19,7 @@ const DEFAULT_RULES: Rules = {
   noRightClick: false,
   noCategories: false,
   timeLimit: null,
+  gameMode: 'speed',
 };
 
 export function GameConfig({ lobbyCode, initialSource, initialTarget, initialRules }: GameConfigProps) {
@@ -107,6 +108,34 @@ export function GameConfig({ lobbyCode, initialSource, initialTarget, initialRul
             onChange={(val) => { setTarget(val); setSaved(false); }}
           />
         </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <h3 className="text-sm font-medium">Game mode</h3>
+
+        {([
+          { value: 'speed', label: 'Speed', description: 'First to arrive wins' },
+          { value: 'fewest_clicks', label: 'Fewest clicks', description: 'Least clicks wins, everyone finishes' },
+        ] as const).map(({ value, label, description }) => (
+          <button
+            key={value}
+            onClick={() => {
+              setRules(prev => ({ ...prev, gameMode: value }));
+              setSaved(false);
+            }}
+            className={`flex items-center justify-between border rounded-lg px-4 py-3 transition text-left ${rules.gameMode === value ? 'border-black bg-black text-white' : 'hover:bg-gray-50'
+              }`}
+          >
+            <div>
+              <p className="font-medium text-sm">{label}</p>
+              <p className={`text-xs ${rules.gameMode === value ? 'text-gray-300' : 'text-gray-400'}`}>
+                {description}
+              </p>
+            </div>
+            <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 ${rules.gameMode === value ? 'bg-white border-white' : 'border-gray-300'
+              }`} />
+          </button>
+        ))}
       </div>
 
       {/* Rules */}

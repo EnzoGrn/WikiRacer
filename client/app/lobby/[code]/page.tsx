@@ -13,6 +13,7 @@ const DEFAULT_RULES: Rules = {
   noRightClick: false,
   noCategories: false,
   timeLimit: null,
+  gameMode: 'speed',
 };
 
 export default function LobbyPage() {

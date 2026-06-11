@@ -24,6 +24,7 @@ describe('useRules', () => {
       noRightClick: false,
       noCategories: false,
       timeLimit: null,
+      gameMode: 'speed',
     }));
     expect(window.addEventListener).not.toHaveBeenCalled();
   });
@@ -35,6 +36,7 @@ describe('useRules', () => {
       noRightClick: false,
       noCategories: false,
       timeLimit: null,
+      gameMode: 'speed',
     }));
 
     expect(window.addEventListener).toHaveBeenCalledWith('keydown', expect.any(Function));
@@ -47,6 +49,7 @@ describe('useRules', () => {
       noRightClick: true,
       noCategories: false,
       timeLimit: null,
+      gameMode: 'speed',
     }));
 
     expect(window.addEventListener).toHaveBeenCalledWith('contextmenu', expect.any(Function));
@@ -59,6 +62,7 @@ describe('useRules', () => {
       noRightClick: false,
       noCategories: false,
       timeLimit: null,
+      gameMode: 'speed',
     }));
 
     const event = new KeyboardEvent('keydown', { key: 'f', ctrlKey: true, cancelable: true });
@@ -75,6 +79,7 @@ describe('useRules', () => {
       noRightClick: false,
       noCategories: false,
       timeLimit: null,
+      gameMode: 'speed',
     }));
 
     const event = new KeyboardEvent('keydown', { key: 'a', cancelable: true });
