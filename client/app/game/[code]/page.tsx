@@ -39,15 +39,55 @@ export default function GamePage() {
 function GameView({ lobby, code }: { lobby: Lobby; code: string }) {
   const router = useRouter();
   const [startedAt, setStartedAt] = useState<number | null>(lobby.startedAt);
+  const [showLeaveWarning, setShowLeaveWarning] = useState(false);
 
+  // Sync startedAt depuis game:started
   useEffect(() => {
     socket.on('game:started', ({ startedAt }: { startedAt: number }) => {
       setStartedAt(startedAt);
     });
+    return () => { socket.off('game:started'); };
+  }, []);
 
-    return () => {
-      socket.off('game:started');
+  // Redirect on replay
+  useEffect(() => {
+    socket.on('game:reset', () => {
+      router.push(`/lobby/${code}`);
+    });
+    return () => { socket.off('game:reset'); };
+  }, [code, router]);
+
+  // Block browser back button
+  useEffect(() => {
+    window.history.pushState(null, '', window.location.href);
+
+    const handlePopState = () => {
+      window.history.pushState(null, '', window.location.href);
+      setShowLeaveWarning(true);
     };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Block Ctrl+R / F5
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'r') e.preventDefault();
+      if (e.key === 'F5') e.preventDefault();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  // Warn on tab close / refresh
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
   }, []);
 
   useRules(lobby.rules);
@@ -67,16 +107,6 @@ function GameView({ lobby, code }: { lobby: Lobby; code: string }) {
     source: lobby.source!,
   });
 
-  useEffect(() => {
-    socket.on('game:reset', () => {
-      router.push(`/lobby/${code}`);
-    });
-
-    return () => {
-      socket.off('game:reset');
-    };
-  }, [code, router]);
-
   if (gameStatus === 'finished') {
     return (
       <Results
@@ -91,6 +121,35 @@ function GameView({ lobby, code }: { lobby: Lobby; code: string }) {
 
   return (
     <main className="flex h-screen overflow-hidden">
+
+      {/* Leave warning modal */}
+      {showLeaveWarning && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-xl p-6 flex flex-col gap-4 max-w-sm w-full mx-4">
+            <h2 className="font-bold text-lg">Leave the game?</h2>
+            <p className="text-gray-500 text-sm">
+              You will be counted as having given up.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowLeaveWarning(false)}
+                className="flex-1 border rounded-lg px-4 py-2 font-medium hover:bg-gray-50 transition"
+              >
+                Stay
+              </button>
+              <button
+                onClick={() => {
+                  socket.emit('game:giveUp', { code });
+                  router.push('/');
+                }}
+                className="flex-1 bg-black text-white rounded-lg px-4 py-2 font-medium hover:bg-gray-800 transition"
+              >
+                Leave
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Sidebar */}
       <aside className="w-64 flex-shrink-0 border-r flex flex-col gap-4 p-4 overflow-y-auto">
@@ -120,7 +179,6 @@ function GameView({ lobby, code }: { lobby: Lobby; code: string }) {
 
       {/* Wikipedia content */}
       <div className="flex-1 overflow-y-auto">
-        {/* HUD */}
         <GameHUD
           target={lobby.target!}
           clicks={players.find(p => p.id === socket.id)?.clicks ?? 0}
