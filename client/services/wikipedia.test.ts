@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { isInternalWikiLink, extractTitleFromHref, normalizeTitle, sanitizeWikiHtml, fetchWikiPage } from './wikipedia';
+import { isInternalWikiLink, extractTitleFromHref, normalizeTitle, sanitizeWikiHtml, fetchWikiPage, validateWikiPage } from './wikipedia';
 
 describe('isInternalWikiLink', () => {
   it('accepts internal ./ links', () => {
@@ -111,5 +111,19 @@ describe('fetchWikiPage', () => {
 
     const html = await fetchWikiPage('Napoleon');
     expect(html).toContain('Napoleon content');
+  });
+});
+
+describe('validateWikiPage', () => {
+  it('returns true for existing page', async () => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: true });
+    const result = await validateWikiPage('Napoleon');
+    expect(result).toBe(true);
+  });
+
+  it('returns false for non-existing page', async () => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: false });
+    const result = await validateWikiPage('PageQuiNexistePas123');
+    expect(result).toBe(false);
   });
 });
