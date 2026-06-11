@@ -147,7 +147,7 @@ function GameView({ lobby, code }: { lobby: Lobby; code: string }) {
         <WikiPage html={html} onNavigate={navigate} />
       </div>
 
-      <Countdown />
+      {/* <Countdown /> */}
     </main>
   );
 }
