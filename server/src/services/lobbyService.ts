@@ -1,6 +1,6 @@
 import { redis } from './redis';
 import { generateLobbyCode } from '../utils/generateCode';
-import type { Lobby, Player, Rules } from '../../../shared/types';
+import type { GameMode, Lobby, Player, Rules } from '../../../shared/types';
 
 const LOBBY_TTL = 60 * 60 * 2; // 2 hours
 
@@ -21,6 +21,7 @@ export async function createLobby(hostId: string, hostName: string): Promise<Lob
       noRightClick: false,
       noCategories: false,
       timeLimit: null,
+      gameMode: 'speed' as GameMode
     },
     players: [
       { id: hostId, name: hostName, ready: false, path: [], clicks: 0, finishedAt: null, rank: null }
@@ -137,19 +138,25 @@ export async function startGame(code: string): Promise<Lobby> {
 }
 
 export async function endGame(code: string, players: Player[], startedAt: number) {
+  const lobby = await getLobby(code);
+  const gameMode = lobby?.rules?.gameMode ?? 'speed';
+
   await redis.hset(`lobby:${code}`, 'status', 'finished');
 
-  const rankings = players
-    .filter(p => p.finishedAt && p.finishedAt > 0)
-    .sort((a, b) => a.finishedAt! - b.finishedAt!)
-    .map((p, i) => ({
-      rank: i + 1,
-      id: p.id,
-      name: p.name,
-      clicks: p.clicks,
-      time: p.finishedAt! - startedAt,
-      path: p.path,
-    }));
+  const finishedPlayers = players.filter(p => p.finishedAt && p.finishedAt > 0);
+
+  const sorted = gameMode === 'fewest_clicks'
+    ? finishedPlayers.sort((a, b) => a.clicks - b.clicks || a.finishedAt! - b.finishedAt!)
+    : finishedPlayers.sort((a, b) => a.finishedAt! - b.finishedAt!);
+
+  const rankings = sorted.map((p, i) => ({
+    rank: i + 1,
+    id: p.id,
+    name: p.name,
+    clicks: p.clicks,
+    time: p.finishedAt! - startedAt,
+    path: p.path,
+  }));
 
   const gaveUp = players
     .filter(p => p.finishedAt === -1)

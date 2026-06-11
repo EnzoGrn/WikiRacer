@@ -13,6 +13,7 @@ vi.mock('./redis', () => ({
 
 import { redis } from './redis';
 import { addPlayer, createLobby, getLobby, removePlayer, resetLobby, startGame, updateLobbyConfig } from './lobbyService';
+import { GameMode } from '../../../shared/types';
 
 describe('createLobby', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -254,7 +255,7 @@ describe('updateLobbyConfig', () => {
       startedAt: '',
     });
 
-    const rules = { noCtrlF: true, noBack: false, noRightClick: false, noCategories: false, timeLimit: null };
+    const rules = { noCtrlF: true, noBack: false, noRightClick: false, noCategories: false, timeLimit: null, gameMode: 'speed' as GameMode };
     const lobby = await updateLobbyConfig('ABC123', { source: 'Napoleon', target: 'Pizza', rules });
 
     expect(lobby.source).toBe('Napoleon');

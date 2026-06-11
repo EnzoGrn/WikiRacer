@@ -79,10 +79,19 @@ export function registerGameHandlers(io: Server, socket: Socket) {
           path: player.path,
         });
 
-        const allDone = lobby.players.every(p => p.finishedAt !== null);
-        if (allDone) {
+
+        const gameMode = lobby.rules?.gameMode ?? 'speed';
+
+        if (gameMode === 'speed') {
           const result = await endGame(code, lobby.players, lobby.startedAt!);
           io.to(code).emit('game:finished', result);
+
+        } else {
+          const allDone = lobby.players.every(p => p.finishedAt !== null);
+          if (allDone) {
+            const result = await endGame(code, lobby.players, lobby.startedAt!);
+            io.to(code).emit('game:finished', result);
+          }
         }
 
       } else {

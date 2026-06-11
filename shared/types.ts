@@ -1,4 +1,5 @@
 export type GameStatus = 'waiting' | 'playing' | 'finished';
+export type GameMode = 'speed' | 'fewest_clicks';
 
 export interface Player {
   id: string;
@@ -16,6 +17,7 @@ export interface Rules {
   noRightClick: boolean;
   noCategories: boolean;
   timeLimit: number | null; // seconds
+  gameMode: GameMode;
 }
 
 export interface Lobby {
