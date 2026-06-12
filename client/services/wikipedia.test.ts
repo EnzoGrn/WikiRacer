@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { isInternalWikiLink, extractTitleFromHref, normalizeTitle, sanitizeWikiHtml, fetchWikiPage, validateWikiPage } from './wikipedia';
+import { isInternalWikiLink, extractTitleFromHref, normalizeTitle, sanitizeWikiHtml, fetchWikiPage, validateWikiPage, randomWikiPage } from './wikipedia';
 
 describe('isInternalWikiLink', () => {
   it('accepts internal ./ links', () => {
@@ -125,5 +125,35 @@ describe('validateWikiPage', () => {
     global.fetch = vi.fn().mockResolvedValue({ ok: false });
     const result = await validateWikiPage('PageQuiNexistePas123');
     expect(result).toBe(false);
+  });
+});
+
+describe('randomWikiPage', () => {
+  it('returns a page title', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({ title: 'Napoleon' }),
+    });
+
+    const title = await randomWikiPage();
+    expect(title).toBe('Napoleon');
+  });
+
+  it('throws on error', async () => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: false });
+    await expect(randomWikiPage()).rejects.toThrow('Failed to fetch random page');
+  });
+
+  it('uses the correct language', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({ title: 'Napoleon' }),
+    });
+
+    await randomWikiPage('en');
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('en.wikipedia.org'),
+      expect.any(Object)
+    );
   });
 });
