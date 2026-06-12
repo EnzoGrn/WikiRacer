@@ -1,0 +1,30 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model DailyRoute {
+  date      DateTime   @id @db.Date
+  source    String
+  target    String
+  createdAt DateTime   @default(now()) @map("created_at")
+  stats     DailyStats?
+
+  @@map("daily_routes")
+}
+
+model DailyStats {
+  id          Int        @id @default(autoincrement())
+  date        DateTime   @unique @db.Date
+  completions Int        @default(0)
+  totalClicks Int        @default(0) @map("total_clicks")
+  totalTime   Int        @default(0) @map("total_time")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  route       DailyRoute @relation(fields: [date], references: [date])
+
+  @@map("daily_stats")
+}

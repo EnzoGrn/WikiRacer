@@ -10,7 +10,9 @@ RUN npm ci
 
 COPY server/src/ ./src/
 COPY server/tsconfig.json ./
+COPY server/prisma/ ./prisma/
 
+RUN npx prisma generate
 RUN npm run build
 
 FROM node:20-alpine
@@ -21,8 +23,10 @@ COPY server/package*.json ./
 RUN npm ci --omit=dev
 
 COPY --from=builder /app/server/dist ./dist
+COPY --from=builder /app/server/prisma ./prisma
 COPY --from=builder /app/shared ../shared
+COPY --from=builder /app/server/node_modules/.prisma ./node_modules/.prisma
 
 EXPOSE 3001
 
-CMD ["node", "dist/server/src/index.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server/src/index.js"]
