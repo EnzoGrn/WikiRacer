@@ -76,7 +76,7 @@ export async function searchWikiPages(query: string): Promise<string[]> {
 
   const encoded = encodeURIComponent(query);
   const res = await fetch(
-    `https://fr.wikipedia.org/w/api.php?action=opensearch&search=${encoded}&limit=5&format=json&origin=*`,
+    `https://fr.wikipedia.org/w/api.php?action=opensearch&search=${encoded}&limit=50&format=json&origin=*`,
     { headers: { 'Api-User-Agent': USER_AGENT } }
   );
 

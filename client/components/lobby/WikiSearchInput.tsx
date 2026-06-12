@@ -73,7 +73,7 @@ export function WikiSearchInput({ label, placeholder, value, onChange }: WikiSea
         )}
 
         {showSuggestions && suggestions.length > 0 && (
-          <ul className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg overflow-hidden">
+          <ul className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg overflow-y-auto max-h-60">
             {suggestions.map((suggestion) => (
               <li
                 key={suggestion}
