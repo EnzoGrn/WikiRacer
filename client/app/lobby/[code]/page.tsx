@@ -93,16 +93,10 @@ export default function LobbyPage() {
             <button
               onClick={handleCopy}
               title="Copy code"
-              className={`w-8 h-8 flex items-center justify-center border rounded-lg transition text-sm ${copied ? 'bg-green-500 border-green-500 text-white' : 'hover:bg-gray-50'
-                }`}
+              className="w-8 h-8 flex items-center justify-center border rounded-lg transition text-sm hover:bg-gray-50"
             >
               {copied ? '✓' : '📋'}
             </button>
-            {copied && (
-              <span className="text-xs text-green-500 font-medium animate-pulse">
-                Copied!
-              </span>
-            )}
           </div>
         </div>
       </div>
