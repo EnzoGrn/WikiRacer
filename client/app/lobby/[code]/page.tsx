@@ -21,10 +21,14 @@ export default function LobbyPage() {
   const { code } = useParams<{ code: string }>();
   const [lobby, setLobby] = useState<Lobby | null>(null);
   const isHost = lobby?.hostId === socket.id;
-
   const canStart = !!lobby?.source && !!lobby?.target;
-
   const router = useRouter();
+
+  const [codeVisible, setCodeVisible] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(code);
+  };
 
   const handleStart = () => {
     socket.emit('game:start', { code: lobby?.code }, (res: { ok: boolean; error?: string }) => {
@@ -68,7 +72,30 @@ export default function LobbyPage() {
       <div className="flex flex-col items-center gap-2">
         <h1 className="text-2xl font-bold">Lobby</h1>
         <p className="text-gray-500 text-sm">Share this code with your friends</p>
-        <span className="text-4xl font-mono tracking-widest font-bold">{code}</span>
+
+        <div className="flex items-center gap-2">
+          <span className={`text-4xl font-mono tracking-widest font-bold transition-all ${!codeVisible ? 'blur-sm select-none' : ''
+            }`}>
+            {code}
+          </span>
+
+          <div className="flex flex-col gap-1">
+            <button
+              onClick={() => setCodeVisible(v => !v)}
+              title={codeVisible ? 'Hide code' : 'Show code'}
+              className="w-8 h-8 flex items-center justify-center border rounded-lg hover:bg-gray-50 transition text-sm"
+            >
+              {codeVisible ? '🙈' : '👁️'}
+            </button>
+            <button
+              onClick={handleCopy}
+              title="Copy code"
+              className="w-8 h-8 flex items-center justify-center border rounded-lg hover:bg-gray-50 transition text-sm"
+            >
+              📋
+            </button>
+          </div>
+        </div>
       </div>
 
       <PlayerList initialPlayers={lobby.players} initialHostId={lobby.hostId} />
