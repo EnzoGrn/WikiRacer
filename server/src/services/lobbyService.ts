@@ -21,7 +21,8 @@ export async function createLobby(hostId: string, hostName: string): Promise<Lob
       noRightClick: false,
       noCategories: false,
       timeLimit: null,
-      gameMode: 'speed' as GameMode
+      gameMode: 'speed' as GameMode,
+      hideOpponents: false,
     },
     players: [
       { id: hostId, name: hostName, ready: false, path: [], clicks: 0, finishedAt: null, rank: null }

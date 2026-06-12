@@ -17,6 +17,7 @@ export interface Rules {
   noRightClick: boolean;
   noCategories: boolean;
   timeLimit: number | null; // seconds
+  hideOpponents: boolean;
   gameMode: GameMode;
 }
 

@@ -14,6 +14,7 @@ const DEFAULT_RULES: Rules = {
   noCategories: false,
   timeLimit: null,
   gameMode: 'speed',
+  hideOpponents: false,
 };
 
 export default function LobbyPage() {

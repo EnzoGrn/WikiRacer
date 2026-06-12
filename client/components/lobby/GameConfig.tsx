@@ -20,6 +20,7 @@ const DEFAULT_RULES: Rules = {
   noCategories: false,
   timeLimit: null,
   gameMode: 'speed',
+  hideOpponents: false,
 };
 
 export function GameConfig({ lobbyCode, initialSource, initialTarget, initialRules }: GameConfigProps) {
@@ -147,6 +148,7 @@ export function GameConfig({ lobbyCode, initialSource, initialTarget, initialRul
           { key: 'noBack', label: 'No going back', description: 'Back button is disabled' },
           { key: 'noRightClick', label: 'No right click', description: 'Prevents opening in new tab' },
           { key: 'noCategories', label: 'No category links', description: 'Category links are disabled' },
+          { key: 'hideOpponents', label: 'Hide opponents', description: 'You cannot see other players\' progress' },
         ] as const).map(({ key, label, description }) => (
           <button
             key={key}

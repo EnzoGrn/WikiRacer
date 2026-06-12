@@ -255,7 +255,7 @@ describe('updateLobbyConfig', () => {
       startedAt: '',
     });
 
-    const rules = { noCtrlF: true, noBack: false, noRightClick: false, noCategories: false, timeLimit: null, gameMode: 'speed' as GameMode };
+    const rules = { noCtrlF: true, noBack: false, noRightClick: false, noCategories: false, timeLimit: null, gameMode: 'speed' as GameMode, hideOpponents: false };
     const lobby = await updateLobbyConfig('ABC123', { source: 'Napoleon', target: 'Pizza', rules });
 
     expect(lobby.source).toBe('Napoleon');

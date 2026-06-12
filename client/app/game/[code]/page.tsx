@@ -41,7 +41,6 @@ function GameView({ lobby, code }: { lobby: Lobby; code: string }) {
   const [startedAt, setStartedAt] = useState<number | null>(lobby.startedAt);
   const [showLeaveWarning, setShowLeaveWarning] = useState(false);
 
-  // Sync startedAt depuis game:started
   useEffect(() => {
     socket.on('game:started', ({ startedAt }: { startedAt: number }) => {
       setStartedAt(startedAt);
@@ -49,7 +48,6 @@ function GameView({ lobby, code }: { lobby: Lobby; code: string }) {
     return () => { socket.off('game:started'); };
   }, []);
 
-  // Redirect on replay
   useEffect(() => {
     socket.on('game:reset', () => {
       router.push(`/lobby/${code}`);
@@ -57,7 +55,6 @@ function GameView({ lobby, code }: { lobby: Lobby; code: string }) {
     return () => { socket.off('game:reset'); };
   }, [code, router]);
 
-  // Block browser back button
   useEffect(() => {
     window.history.pushState(null, '', window.location.href);
 
@@ -165,7 +162,7 @@ function GameView({ lobby, code }: { lobby: Lobby; code: string }) {
           </p>
         </div>
 
-        <PlayerTracker players={players} target={lobby.target!} />
+        <PlayerTracker players={players} target={lobby.target!} hideOpponents={lobby.rules?.hideOpponents ?? false} />
 
         {canGoBack && (
           <button
