@@ -14,7 +14,8 @@ describe('useRules', () => {
 
   it('does nothing when rules are null', () => {
     renderHook(() => useRules(null));
-    expect(window.addEventListener).not.toHaveBeenCalled();
+    expect(window.addEventListener).toHaveBeenCalledWith('keydown', expect.any(Function));
+    expect(window.addEventListener).not.toHaveBeenCalledWith('contextmenu', expect.any(Function));
   });
 
   it('does nothing when all rules are false', () => {
@@ -25,8 +26,9 @@ describe('useRules', () => {
       noCategories: false,
       timeLimit: null,
       gameMode: 'speed',
+      hideOpponents: false,
     }));
-    expect(window.addEventListener).not.toHaveBeenCalled();
+    expect(window.addEventListener).not.toHaveBeenCalledWith('contextmenu', expect.any(Function));
   });
 
   it('registers keydown listener when noCtrlF is true', () => {
@@ -37,6 +39,7 @@ describe('useRules', () => {
       noCategories: false,
       timeLimit: null,
       gameMode: 'speed',
+      hideOpponents: false,
     }));
 
     expect(window.addEventListener).toHaveBeenCalledWith('keydown', expect.any(Function));
@@ -50,6 +53,7 @@ describe('useRules', () => {
       noCategories: false,
       timeLimit: null,
       gameMode: 'speed',
+      hideOpponents: false,
     }));
 
     expect(window.addEventListener).toHaveBeenCalledWith('contextmenu', expect.any(Function));
@@ -63,6 +67,7 @@ describe('useRules', () => {
       noCategories: false,
       timeLimit: null,
       gameMode: 'speed',
+      hideOpponents: false,
     }));
 
     const event = new KeyboardEvent('keydown', { key: 'f', ctrlKey: true, cancelable: true });
@@ -80,6 +85,7 @@ describe('useRules', () => {
       noCategories: false,
       timeLimit: null,
       gameMode: 'speed',
+      hideOpponents: false,
     }));
 
     const event = new KeyboardEvent('keydown', { key: 'a', cancelable: true });
