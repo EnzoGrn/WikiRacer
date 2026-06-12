@@ -1,15 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useLobby } from '@/hooks/useLobby';
+import { useSearchParams } from 'next/navigation';
 
 type Mode = 'create' | 'join';
 
-export default function Home() {
+function HomeContent() {
   const [mode, setMode] = useState<Mode>('create');
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const { createLobby, joinLobby, loading, error } = useLobby();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const joinCode = searchParams.get('join');
+    if (joinCode) {
+      setMode('join');
+      setCode(joinCode.toUpperCase());
+    }
+  }, [searchParams]);
 
   const handleSubmit = () => {
     if (!name.trim()) return;
@@ -83,5 +93,13 @@ export default function Home() {
         </button>
       </div>
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense>
+      <HomeContent />
+    </Suspense>
   );
 }

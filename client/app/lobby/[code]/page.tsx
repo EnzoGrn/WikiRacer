@@ -26,6 +26,14 @@ export default function LobbyPage() {
 
   const [codeVisible, setCodeVisible] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [inviteCopied, setInviteCopied] = useState(false);
+
+  const handleInvite = () => {
+    const url = `${window.location.origin}?join=${code}`;
+    navigator.clipboard.writeText(url);
+    setInviteCopied(true);
+    setTimeout(() => setInviteCopied(false), 2000);
+  };
 
   const handleCopy = () => {
     navigator.clipboard.writeText(code);
@@ -99,6 +107,14 @@ export default function LobbyPage() {
             </button>
           </div>
         </div>
+
+        <button
+          onClick={handleInvite}
+          className={`flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium transition ${inviteCopied ? 'bg-green-500 border-green-500 text-white' : 'hover:bg-gray-50'
+            }`}
+        >
+          {inviteCopied ? '✓ Link copied!' : '🔗 Invite friends'}
+        </button>
       </div>
 
       <PlayerList initialPlayers={lobby.players} initialHostId={lobby.hostId} />
