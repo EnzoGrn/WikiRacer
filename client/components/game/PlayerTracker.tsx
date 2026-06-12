@@ -68,7 +68,6 @@ export function PlayerTracker({ players, target, hideOpponents }: PlayerTrackerP
               {!shouldHide && (
                 <span className="flex-shrink-0">{player.clicks} clicks</span>
               )}
-              <span className="flex-shrink-0">{player.clicks} clicks</span>
             </div>
           </div>
         );
