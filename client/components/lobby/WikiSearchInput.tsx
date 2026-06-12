@@ -56,7 +56,9 @@ export function WikiSearchInput({ label, placeholder, value, onChange }: WikiSea
 
   return (
     <div className="flex flex-col gap-1" ref={containerRef}>
-      <label className="text-sm font-medium">{label}</label>
+      {label && (
+        <label className="text-sm font-medium">{label}</label>
+      )}
       <div className="relative">
         <input
           type="text"

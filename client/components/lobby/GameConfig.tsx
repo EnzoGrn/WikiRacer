@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { socket } from '@/lib/socket';
 import type { Rules } from '@shared/types';
-import { validateWikiPage } from '@/services/wikipedia';
+import { randomWikiPage, validateWikiPage } from '@/services/wikipedia';
 import { WikiSearchInput } from './WikiSearchInput';
 
 interface GameConfigProps {
@@ -33,9 +33,25 @@ export function GameConfig({ lobbyCode, initialSource, initialTarget, initialRul
   const [validating, setValidating] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
+  const [randomizing, setRandomizing] = useState<'source' | 'target' | null>(null);
+
   const toggleRule = (key: keyof Omit<Rules, 'timeLimit'>) => {
     setRules(prev => ({ ...prev, [key]: !prev[key] }));
     setSaved(false);
+  };
+
+  const handleRandom = async (field: 'source' | 'target') => {
+    setRandomizing(field);
+    try {
+      const title = await randomWikiPage();
+      if (field === 'source') setSource(title);
+      else setTarget(title);
+      setSaved(false);
+    } catch (err) {
+      setError('Failed to fetch random page');
+    } finally {
+      setRandomizing(null);
+    }
   };
 
   const handleSave = async () => {
@@ -92,22 +108,47 @@ export function GameConfig({ lobbyCode, initialSource, initialTarget, initialRul
       {/* Pages */}
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <WikiSearchInput
-            label="Start page"
-            placeholder="e.g. Napoleon"
-            value={source}
-            onChange={(val) => { setSource(val); setSaved(false); }}
-          />
-
+          <label className="text-sm font-medium">Start page</label>
+          <div className="flex gap-2 items-stretch">
+            <div className="flex-1">
+              <WikiSearchInput
+                label=""
+                placeholder="e.g. Napoleon"
+                value={source}
+                onChange={(val) => { setSource(val); setSaved(false); }}
+              />
+            </div>
+            <button
+              onClick={() => handleRandom('source')}
+              disabled={randomizing === 'source'}
+              title="Random page"
+              className="w-10 self-stretch border rounded-lg flex items-center justify-center hover:bg-gray-50 transition disabled:opacity-40 flex-shrink-0 text-lg"
+            >
+              {randomizing === 'source' ? '...' : '🎲'}
+            </button>
+          </div>
         </div>
 
         <div className="flex flex-col gap-1">
-          <WikiSearchInput
-            label="Target page"
-            placeholder="e.g. Pizza"
-            value={target}
-            onChange={(val) => { setTarget(val); setSaved(false); }}
-          />
+          <label className="text-sm font-medium">Target page</label>
+          <div className="flex gap-2 items-stretch">
+            <div className="flex-1">
+              <WikiSearchInput
+                label=""
+                placeholder="e.g. Pizza"
+                value={target}
+                onChange={(val) => { setTarget(val); setSaved(false); }}
+              />
+            </div>
+            <button
+              onClick={() => handleRandom('target')}
+              disabled={randomizing === 'target'}
+              title="Random page"
+              className="w-10 self-stretch border rounded-lg flex items-center justify-center hover:bg-gray-50 transition disabled:opacity-40 flex-shrink-0 text-lg"
+            >
+              {randomizing === 'target' ? '...' : '🎲'}
+            </button>
+          </div>
         </div>
       </div>
 

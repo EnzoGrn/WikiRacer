@@ -85,3 +85,15 @@ export async function searchWikiPages(query: string): Promise<string[]> {
   const data = await res.json();
   return data[1] as string[]; // [query, [suggestions], [descriptions], [urls]]
 }
+
+export async function randomWikiPage(lang = 'fr'): Promise<string> {
+  const res = await fetch(
+    `https://${lang}.wikipedia.org/api/rest_v1/page/random/summary`,
+    { headers: { 'Api-User-Agent': USER_AGENT } }
+  );
+
+  if (!res.ok) throw new Error('Failed to fetch random page');
+
+  const data = await res.json();
+  return data.title as string;
+}
