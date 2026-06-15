@@ -41,17 +41,15 @@ function HomeContent() {
       <div className="flex rounded-lg border overflow-hidden">
         <button
           onClick={() => setMode('create')}
-          className={`px-6 py-2 font-medium transition ${
-            mode === 'create' ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-50'
-          }`}
+          className={`px-6 py-2 font-medium transition ${mode === 'create' ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-50'
+            }`}
         >
           Create
         </button>
         <button
           onClick={() => setMode('join')}
-          className={`px-6 py-2 font-medium transition ${
-            mode === 'join' ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-50'
-          }`}
+          className={`px-6 py-2 font-medium transition ${mode === 'join' ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-50'
+            }`}
         >
           Join
         </button>
@@ -92,6 +90,11 @@ function HomeContent() {
           }
         </button>
       </div>
+      <a href="/daily"
+        className="text-sm text-gray-400 hover:text-black transition underline underline-offset-2"
+      >
+        Play today's daily route →
+      </a>
     </main>
   );
 }
