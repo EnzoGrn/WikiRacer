@@ -6,6 +6,11 @@ const router = Router();
 router.get('/', async (req, res) => {
   try {
     const route = await getDailyRoute();
+
+    if (!route) {
+      return res.status(404).json({ error: 'No approved route for today' });
+    }
+
     res.json({
       date: route.date,
       source: route.source,
