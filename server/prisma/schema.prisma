@@ -11,10 +11,21 @@ model DailyRoute {
   date      DateTime   @id @db.Date
   source    String
   target    String
+  status    String     @default("pending") // pending | approved
   createdAt DateTime   @default(now()) @map("created_at")
   stats     DailyStats?
 
   @@map("daily_routes")
+}
+
+model DailyCandidate {
+  id        Int      @id @default(autoincrement())
+  date      DateTime @db.Date
+  source    String
+  target    String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("daily_candidates")
 }
 
 model DailyStats {
