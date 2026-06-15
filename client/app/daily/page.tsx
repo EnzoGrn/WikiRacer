@@ -141,7 +141,7 @@ export default function DailyPage() {
   if (!route) {
     return (
       <main className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-400">Loading today's route...</p>
+        <p className="text-gray-400">No daily route available yet. Come back later!</p>
       </main>
     );
   }
