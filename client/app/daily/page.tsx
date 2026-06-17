@@ -7,6 +7,7 @@ import { WikiPage } from '@/components/game/WikiPage';
 import { GameHUD } from '@/components/game/GameHUD';
 import { fetchWikiPage } from '@/services/wikipedia';
 import { normalizeTitle } from '@/services/wikipedia';
+import Cookies from 'js-cookie';
 
 interface DailyRoute {
   date: string;
@@ -31,15 +32,15 @@ interface DailyState {
   finishedAt: number | null;
 }
 
-const STORAGE_KEY = 'wikiracer:daily';
-
+const COOKIE_KEY = 'wikiracer:daily';
+const COOKIE_EXPIRES = 180; // 6 months in days
 function getTodayKey(): string {
   return new Date().toISOString().split('T')[0];
 }
 
 function loadDailyState(): DailyState | null {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = Cookies.get(COOKIE_KEY);
     if (!raw) return null;
     const { date, state } = JSON.parse(raw);
     if (date !== getTodayKey()) return null;
@@ -50,10 +51,16 @@ function loadDailyState(): DailyState | null {
 }
 
 function saveDailyState(state: DailyState) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+  Cookies.set(COOKIE_KEY, JSON.stringify({
     date: getTodayKey(),
     state,
-  }));
+  }), { expires: COOKIE_EXPIRES });
+}
+
+function formatAvgTime(seconds: number): string {
+  const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+  const s = (seconds % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
 }
 
 export default function DailyPage() {
@@ -136,7 +143,7 @@ export default function DailyPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           clicks: newState.clicks,
-          time: now - startedAt,
+          time: Math.floor((newState.finishedAt! - newState.startedAt!) / 1000),
         }),
       }).catch(console.error);
     }
@@ -256,7 +263,7 @@ export default function DailyPage() {
             {route.stats.completions > 0 && (
               <p className="text-xs text-gray-400">
                 {route.stats.completions} player{route.stats.completions > 1 ? 's' : ''} finished
-                {route.stats.avgTime && ` · avg ${route.stats.avgTime} seconds`}
+                {route.stats.avgTime && ` · avg ${formatAvgTime(route.stats.avgTime)} time`}
                 {route.stats.avgClicks && ` · avg ${route.stats.avgClicks} clicks`}
               </p>
             )}

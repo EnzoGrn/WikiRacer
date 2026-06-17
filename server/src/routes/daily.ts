@@ -42,10 +42,10 @@ router.get('/', async (req, res) => {
 
 router.post('/complete', async (req, res) => {
   try {
-    const { clicks, time } = req.body as { clicks: number; time: number };
-    if (!clicks || !time) return res.status(400).json({ error: 'clicks and time are required' });
+    const { clicks, timeSeconds } = req.body as { clicks: number; timeSeconds: number };
+    if (!clicks || !timeSeconds) return res.status(400).json({ error: 'clicks and timeSeconds are required' });
 
-    await completeDailyRoute(clicks, time);
+    await completeDailyRoute(clicks, timeSeconds);
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Failed to complete daily route' });
