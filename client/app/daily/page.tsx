@@ -16,6 +16,10 @@ interface DailyRoute {
     completions: number;
     avgClicks: number | null;
     avgTime: number | null;
+    difficulty: {
+      label: string;
+      color: string;
+    };
   } | null;
 }
 
@@ -243,12 +247,18 @@ export default function DailyPage() {
           <p className="text-2xl font-bold">{gameState.clicks}</p>
         </div>
 
-        {route.stats && route.stats.completions > 0 && (
+        {route.stats && (
           <div className="flex flex-col gap-1 mt-auto">
-            <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold">Today</p>
-            <p className="text-sm text-gray-500">{route.stats.completions} players finished</p>
-            {route.stats.avgClicks && (
-              <p className="text-sm text-gray-500">avg {route.stats.avgClicks} clicks</p>
+            <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold">Difficulty</p>
+            <p className={`font-bold ${route.stats.difficulty.color}`}>
+              {route.stats.difficulty.label}
+            </p>
+            {route.stats.completions > 0 && (
+              <p className="text-xs text-gray-400">
+                {route.stats.completions} player{route.stats.completions > 1 ? 's' : ''} finished
+                {route.stats.avgTime && ` · avg ${route.stats.avgTime} seconds`}
+                {route.stats.avgClicks && ` · avg ${route.stats.avgClicks} clicks`}
+              </p>
             )}
           </div>
         )}
