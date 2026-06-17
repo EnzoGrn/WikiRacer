@@ -3,27 +3,37 @@ import { completeDailyRoute, getArchives, getDailyRoute } from '../services/dail
 
 const router = Router();
 
+function getDifficultyLabel(avgClicks: number | null): { label: string; color: string } {
+  if (avgClicks === null) return { label: 'Unknown', color: 'text-gray-400' };
+  if (avgClicks <= 5) return { label: 'Easy', color: 'text-green-500' };
+  if (avgClicks <= 10) return { label: 'Medium', color: 'text-yellow-500' };
+  if (avgClicks <= 20) return { label: 'Hard', color: 'text-orange-500' };
+  return { label: 'Expert', color: 'text-red-500' };
+}
+
 router.get('/', async (req, res) => {
   try {
     const route = await getDailyRoute();
+    if (!route) return res.status(404).json({ error: 'No approved route for today' });
 
-    if (!route) {
-      return res.status(404).json({ error: 'No approved route for today' });
-    }
+    const avgClicks = route.stats && route.stats.completions > 0
+      ? Math.round(route.stats.totalClicks / route.stats.completions)
+      : null;
+
+    const difficulty = getDifficultyLabel(avgClicks);
 
     res.json({
       date: route.date,
       source: route.source,
       target: route.target,
-      stats: route.stats ? {
-        completions: route.stats.completions,
-        avgClicks: route.stats.completions > 0
-          ? Math.round(route.stats.totalClicks / route.stats.completions)
-          : null,
-        avgTime: route.stats.completions > 0
+      stats: {
+        completions: route.stats?.completions ?? 0,
+        avgClicks,
+        avgTime: route.stats && route.stats.completions > 0
           ? Math.round(route.stats.totalTime / route.stats.completions)
           : null,
-      } : null,
+        difficulty,
+      },
     });
   } catch (err) {
     res.status(500).json({ error: 'Failed to get daily route' });
