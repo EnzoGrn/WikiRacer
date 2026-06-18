@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { socket } from '@/lib/socket';
 import type { Player } from '@shared/types';
+import { Crown } from 'lucide-react';
 
 interface PlayerListProps {
   initialPlayers: Player[];
@@ -30,25 +31,27 @@ export function PlayerList({ initialPlayers, initialHostId }: PlayerListProps) {
   }, []);
 
   return (
-    <div className="flex flex-col gap-2 w-full max-w-sm">
-      <h2 className="font-semibold text-gray-500 text-sm uppercase tracking-wide">
-        Players — {players.length}/8
-      </h2>
-      <ul className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 w-full">
+      <p className="label">Players — {players.length}/8</p>
+      <ul className="flex flex-col gap-1.5">
         {players.map((player) => (
           <li
             key={player.id}
-            className="flex items-center justify-between border rounded-lg px-4 py-2"
+            className={`card flex items-center justify-between py-2.5 ${
+              player.id === socket.id ? 'border-accent' : ''
+            }`}
+            style={player.id === socket.id ? { borderColor: 'var(--accent)' } : {}}
           >
-            <span className="font-medium">{player.name}</span>
+            <span className="font-medium text-sm">{player.name}</span>
             <div className="flex items-center gap-2">
               {player.id === hostId && (
-                <span className="text-xs bg-black text-white rounded px-2 py-0.5">
+                <span className="badge badge-default flex items-center gap-1">
+                  <Crown size={11} />
                   Host
                 </span>
               )}
               {player.id === socket.id && (
-                <span className="text-xs text-gray-400">you</span>
+                <span className="text-xs" style={{ color: 'var(--muted)' }}>you</span>
               )}
             </div>
           </li>
