@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useLobby } from '@/hooks/useLobby';
 import { useSearchParams } from 'next/navigation';
+import { Users, Hash, ArrowRight, Calendar } from 'lucide-react';
 
 type Mode = 'create' | 'join';
 
@@ -32,69 +33,107 @@ function HomeContent() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center gap-6 p-8">
-      <h1 className="text-4xl font-bold">WikiRacer</h1>
-      <p className="text-gray-500 text-center">
-        Navigate from one Wikipedia page to another, faster than your friends.
-      </p>
+    <main className="min-h-screen flex flex-col items-center justify-center p-8">
+      <div className="w-full max-w-sm flex flex-col gap-8">
 
-      <div className="flex rounded-lg border overflow-hidden">
-        <button
-          onClick={() => setMode('create')}
-          className={`px-6 py-2 font-medium transition ${mode === 'create' ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-50'
-            }`}
+        {/* Header */}
+        <div className="flex flex-col gap-2 text-center">
+          <h1 className="text-4xl font-bold tracking-tight">WikiRacer</h1>
+          <p className="subtitle">
+            Navigate from one Wikipedia page to another, faster than your friends.
+          </p>
+        </div>
+
+        {/* Card */}
+        <div className="card flex flex-col gap-5">
+
+          {/* Mode toggle */}
+          <div className="flex rounded-lg border overflow-hidden">
+            <button
+              onClick={() => setMode('create')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition ${
+                mode === 'create'
+                  ? 'bg-foreground text-background'
+                  : 'hover:bg-muted-bg text-foreground'
+              }`}
+              style={mode === 'create' ? { background: 'var(--foreground)', color: 'var(--background)' } : {}}
+            >
+              <Users size={15} />
+              Create
+            </button>
+            <button
+              onClick={() => setMode('join')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition ${
+                mode === 'join'
+                  ? 'bg-foreground text-background'
+                  : 'hover:bg-muted-bg text-foreground'
+              }`}
+              style={mode === 'join' ? { background: 'var(--foreground)', color: 'var(--background)' } : {}}
+            >
+              <Hash size={15} />
+              Join
+            </button>
+          </div>
+
+          {/* Inputs */}
+          <div className="flex flex-col gap-3">
+            <input
+              type="text"
+              placeholder="Your name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+              className="input"
+            />
+
+            {mode === 'join' && (
+              <input
+                type="text"
+                placeholder="Lobby code"
+                value={code}
+                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+                maxLength={6}
+                className="input font-mono tracking-widest uppercase text-center"
+              />
+            )}
+
+            {error && (
+              <p className="text-sm flex items-center gap-1.5" style={{ color: 'var(--danger)' }}>
+                {error}
+              </p>
+            )}
+
+            <button
+              onClick={handleSubmit}
+              disabled={loading || !name.trim() || (mode === 'join' && !code.trim())}
+              className="btn btn-primary btn-lg w-full"
+            >
+              {loading ? (
+                mode === 'create' ? 'Creating...' : 'Joining...'
+              ) : (
+                <>
+                  {mode === 'create' ? 'Create a lobby' : 'Join lobby'}
+                  <ArrowRight size={16} />
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Daily link */}
+        <a
+          href="/daily"
+          className="flex items-center justify-center gap-2 text-sm transition"
+          style={{ color: 'var(--muted)' }}
+          onMouseEnter={e => (e.currentTarget.style.color = 'var(--foreground)')}
+          onMouseLeave={e => (e.currentTarget.style.color = 'var(--muted)')}
         >
-          Create
-        </button>
-        <button
-          onClick={() => setMode('join')}
-          className={`px-6 py-2 font-medium transition ${mode === 'join' ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-50'
-            }`}
-        >
-          Join
-        </button>
+          <Calendar size={15} />
+          Play today's daily route
+          <ArrowRight size={13} />
+        </a>
       </div>
-
-      <div className="flex flex-col gap-3 w-full max-w-sm">
-        <input
-          type="text"
-          placeholder="Your name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-          className="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-black"
-        />
-
-        {mode === 'join' && (
-          <input
-            type="text"
-            placeholder="Lobby code"
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-            onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-            maxLength={6}
-            className="border rounded-lg px-4 py-2 font-mono tracking-widest uppercase focus:outline-none focus:ring-2 focus:ring-black"
-          />
-        )}
-
-        {error && <p className="text-red-500 text-sm">{error}</p>}
-
-        <button
-          onClick={handleSubmit}
-          disabled={loading || !name.trim() || (mode === 'join' && !code.trim())}
-          className="bg-black text-white rounded-lg px-4 py-2 font-medium disabled:opacity-40 hover:bg-gray-800 transition"
-        >
-          {loading
-            ? mode === 'create' ? 'Creating...' : 'Joining...'
-            : mode === 'create' ? 'Create a lobby' : 'Join lobby'
-          }
-        </button>
-      </div>
-      <a href="/daily"
-        className="text-sm text-gray-400 hover:text-black transition underline underline-offset-2"
-      >
-        Play today's daily route →
-      </a>
     </main>
   );
 }
