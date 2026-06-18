@@ -119,18 +119,18 @@ export async function generateDailyRoute() {
   return route;
 }
 
-export async function completeDailyRoute(clicks: number, timeSeconds: number) {
-  const today = await getTodayDate();
+export async function completeDailyRoute(clicks: number, timeSeconds: number, date?: Date) {
+  const targetDate = date ?? await getTodayDate();
 
   await prisma.dailyStats.upsert({
-    where: { date: today },
+    where: { date: targetDate },
     update: {
       completions: { increment: 1 },
       totalClicks: { increment: clicks },
       totalTime: { increment: timeSeconds },
     },
     create: {
-      date: today,
+      date: targetDate,
       completions: 1,
       totalClicks: clicks,
       totalTime: timeSeconds,
