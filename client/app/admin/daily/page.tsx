@@ -1,5 +1,6 @@
 'use client';
 
+import { WikiSearchInput } from '@/components/lobby/WikiSearchInput';
 import { useEffect, useState } from 'react';
 
 interface DailyRoute {
@@ -268,19 +269,15 @@ export default function AdminDailyPage() {
 
             <div className="flex flex-col gap-2 border-t pt-4">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Manual entry</p>
-              <input
-                type="text"
+              <WikiSearchInput
                 placeholder="Source page"
                 value={manualSource}
-                onChange={e => setManualSource(e.target.value)}
-                className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                onChange={setManualSource}
               />
-              <input
-                type="text"
+              <WikiSearchInput
                 placeholder="Target page"
                 value={manualTarget}
-                onChange={e => setManualTarget(e.target.value)}
-                className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                onChange={setManualTarget}
               />
               <button
                 onClick={handleApproveManual}

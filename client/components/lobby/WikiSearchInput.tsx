@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { searchWikiPages } from '@/services/wikipedia';
 
 interface WikiSearchInputProps {
-  label: string;
+  label?: string;
   placeholder: string;
   value: string;
   onChange: (value: string) => void;
