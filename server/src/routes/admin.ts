@@ -1,33 +1,42 @@
 import { Router } from 'express';
-import { approveCandidate, generateCandidates, getUpcomingCandidates, getUpcomingRoutes } from '../services/dailyService';
+import {
+  approveCandidate,
+  generateCandidates,
+} from '../services/dailyService';
 import { prisma } from '../services/prisma';
 
 const router = Router();
-
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'changeme';
 
 router.use((req, res, next) => {
-  console.log('Auth header:', req.headers['x-admin-password']);
-  console.log('Expected:', process.env.ADMIN_PASSWORD);
   const auth = req.headers['x-admin-password'];
-  if (auth !== ADMIN_PASSWORD) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+  if (auth !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Unauthorized' });
   next();
 });
 
-router.get('/candidates', async (req, res) => {
+router.get('/month', async (req, res) => {
   try {
-    const [candidates, approved] = await Promise.all([
-      getUpcomingCandidates(),
-      getUpcomingRoutes(),
+    const year = parseInt(req.query.year as string) || new Date().getFullYear();
+    const month = parseInt(req.query.month as string) || new Date().getMonth() + 1;
+
+    const start = new Date(year, month - 1, 1);
+    const end = new Date(year, month, 0);
+
+    const [routes, candidates] = await Promise.all([
+      prisma.dailyRoute.findMany({
+        where: { date: { gte: start, lte: end }, status: 'approved' },
+        include: { stats: true },
+        orderBy: { date: 'asc' },
+      }),
+      prisma.dailyCandidate.findMany({
+        where: { date: { gte: start, lte: end } },
+        orderBy: { date: 'asc' },
+      }),
     ]);
 
-    const approvedDates = new Set(approved.map(r => r.date.toISOString().split('T')[0]));
-
-    res.json({ candidates, approved, approvedDates: [...approvedDates] });
+    res.json({ routes, candidates });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to get candidates' });
+    res.status(500).json({ error: 'Failed to get month data' });
   }
 });
 
@@ -41,14 +50,38 @@ router.post('/approve', async (req, res) => {
   }
 });
 
+router.post('/approve-manual', async (req, res) => {
+  try {
+    const { date, source, target } = req.body as { date: string; source: string; target: string };
+
+    const existing = await prisma.dailyRoute.findUnique({ where: { date: new Date(date) } });
+    if (existing) {
+      await prisma.dailyStats.deleteMany({ where: { date: new Date(date) } });
+      await prisma.dailyRoute.delete({ where: { date: new Date(date) } });
+    }
+
+    const route = await prisma.dailyRoute.create({
+      data: {
+        date: new Date(date),
+        source,
+        target,
+        status: 'approved',
+        stats: { create: { completions: 0, totalClicks: 0, totalTime: 0 } },
+      },
+      include: { stats: true },
+    });
+
+    res.json({ ok: true, route });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
 router.post('/regenerate', async (req, res) => {
   try {
     const { date } = req.body as { date: string };
-    const dateObj = new Date(date);
-
-    await prisma.dailyCandidate.deleteMany({ where: { date: dateObj } });
-
-    const candidates = await generateCandidates(dateObj, 5);
+    await prisma.dailyCandidate.deleteMany({ where: { date: new Date(date) } });
+    const candidates = await generateCandidates(new Date(date), 5);
     res.json({ ok: true, candidates });
   } catch (err) {
     console.error('Regenerate error:', (err as Error).message);
