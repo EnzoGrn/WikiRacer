@@ -143,11 +143,11 @@ export default function ArchivePage() {
         >
           <div className="flex items-center gap-3">
             <button
-              onClick={() => router.push('/daily')}
+              onClick={() => router.back()}
               className="btn btn-ghost btn-sm"
             >
               <ArrowLeft size={14} />
-              Today
+              Back
             </button>
             <h1 className="title text-xl">Archives</h1>
           </div>
