@@ -4,6 +4,10 @@ import path from 'path';
 export default defineConfig({
   test: {
     environment: 'jsdom',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html'],
+    },
   },
   resolve: {
     alias: {
