@@ -43,10 +43,10 @@ router.get('/', async (req, res) => {
 
 router.post('/complete', async (req, res) => {
   try {
-    const { clicks, timeSeconds } = req.body as { clicks: number; timeSeconds: number };
+    const { clicks, timeSeconds, date } = req.body as { clicks: number; timeSeconds: number; date?: string };
     if (!clicks || !timeSeconds) return res.status(400).json({ error: 'clicks and timeSeconds are required' });
 
-    await completeDailyRoute(clicks, timeSeconds);
+    await completeDailyRoute(clicks, timeSeconds, date ? new Date(date) : undefined);
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Failed to complete daily route' });
@@ -68,6 +68,9 @@ router.get('/archive', async (req, res) => {
         avgTime: r.stats.completions > 0
           ? Math.round(r.stats.totalTime / r.stats.completions)
           : null,
+        difficulty: getDifficultyLabel(r.stats.completions > 0
+          ? Math.round(r.stats.totalClicks / r.stats.completions)
+          : null),
       } : null,
     })));
   } catch (err) {
