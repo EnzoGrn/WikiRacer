@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { WikiPage } from '@/components/game/WikiPage';
 import { GameHUD } from '@/components/game/GameHUD';
 import { fetchWikiPage, normalizeTitle } from '@/services/wikipedia';
 import Cookies from 'js-cookie';
 
-interface DailyRoute {
+interface ArchiveRoute {
   date: string;
   source: string;
   target: string;
@@ -19,7 +19,7 @@ interface DailyRoute {
   } | null;
 }
 
-interface DailyState {
+interface ArchiveState {
   status: 'idle' | 'playing' | 'finished';
   clicks: number;
   path: string[];
@@ -37,27 +37,8 @@ interface HistoryEntry {
   path: string[];
 }
 
-const COOKIE_KEY = 'wikiracer:daily';
 const HISTORY_COOKIE_KEY = 'wikiracer:daily:history';
 const COOKIE_EXPIRES = 180;
-
-function getTodayKey(): string {
-  return new Date().toISOString().split('T')[0];
-}
-
-function loadDailyState(): DailyState | null {
-  try {
-    const raw = Cookies.get(COOKIE_KEY);
-    if (!raw) return null;
-    const { date, state } = JSON.parse(raw);
-    if (date !== getTodayKey()) return null;
-    return state;
-  } catch { return null; }
-}
-
-function saveDailyState(state: DailyState) {
-  Cookies.set(COOKIE_KEY, JSON.stringify({ date: getTodayKey(), state }), { expires: COOKIE_EXPIRES });
-}
 
 function loadHistory(): HistoryEntry[] {
   try {
@@ -79,7 +60,7 @@ function formatTime(seconds: number): string {
   return `${m}:${s}`;
 }
 
-const DEFAULT_STATE: DailyState = {
+const DEFAULT_STATE: ArchiveState = {
   status: 'idle',
   clicks: 0,
   path: [],
@@ -88,70 +69,40 @@ const DEFAULT_STATE: DailyState = {
   totalSeconds: null,
 };
 
-export default function DailyPage() {
+export default function ArchiveDailyPage() {
+  const { date } = useParams<{ date: string }>();
   const router = useRouter();
-  const [route, setRoute] = useState<DailyRoute | null>(null);
+  const [route, setRoute] = useState<ArchiveRoute | null>(null);
   const [html, setHtml] = useState('');
   const [loading, setLoading] = useState(false);
   const [currentTitle, setCurrentTitle] = useState('');
-  const [gameState, setGameState] = useState<DailyState>(DEFAULT_STATE);
-  const gameStateRef = useRef(gameState);
+  const [gameState, setGameState] = useState<ArchiveState>(DEFAULT_STATE);
 
   useEffect(() => {
-    gameStateRef.current = gameState;
-  }, [gameState]);
-
-  useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/daily`)
+    fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/daily/archive/${date}`)
       .then(res => res.json())
-      .then((data: DailyRoute) => {
+      .then((data: ArchiveRoute) => {
         setRoute(data);
-        const saved = loadDailyState();
-        if (saved) {
-          const resumed = { ...saved, sessionStart: saved.status === 'playing' ? Date.now() : null };
-          setGameState(resumed);
-          if (saved.status === 'playing') {
-            const lastPage = saved.path[saved.path.length - 1] || data.source;
-            setCurrentTitle(lastPage);
-            loadPage(lastPage);
-          } else {
-            setCurrentTitle(data.target);
-          }
-        } else {
-          setCurrentTitle(data.source);
-          loadPage(data.source);
+        setCurrentTitle(data.source);
+        loadWikiPage(data.source);
+
+        const history = loadHistory();
+        const played = history.find(h => h.date === date);
+        if (played) {
+          setGameState({
+            status: 'finished',
+            clicks: played.clicks,
+            path: played.path,
+            elapsedSeconds: played.time,
+            sessionStart: null,
+            totalSeconds: played.time,
+          });
         }
       })
       .catch(console.error);
-  }, []);
+  }, [date]);
 
-  useEffect(() => {
-    const handleVisibility = () => {
-      const state = gameStateRef.current;
-      if (state.status !== 'playing') return;
-
-      if (document.hidden) {
-        const sessionElapsed = state.sessionStart
-          ? Math.floor((Date.now() - state.sessionStart) / 1000)
-          : 0;
-        const newState = {
-          ...state,
-          elapsedSeconds: state.elapsedSeconds + sessionElapsed,
-          sessionStart: null,
-        };
-        setGameState(newState);
-        saveDailyState(newState);
-      } else {
-        const newState = { ...state, sessionStart: Date.now() };
-        setGameState(newState);
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibility);
-    return () => document.removeEventListener('visibilitychange', handleVisibility);
-  }, []);
-
-  const loadPage = async (title: string) => {
+  const loadWikiPage = async (title: string) => {
     setLoading(true);
     try {
       const content = await fetchWikiPage(title);
@@ -173,7 +124,7 @@ export default function DailyPage() {
 
     const hasWon = normalizeTitle(title) === normalizeTitle(route!.target);
 
-    const newState: DailyState = {
+    const newState: ArchiveState = {
       status: hasWon ? 'finished' : 'playing',
       clicks: gameState.clicks + 1,
       path: [...gameState.path, title],
@@ -183,32 +134,25 @@ export default function DailyPage() {
     };
 
     setGameState(newState);
-    saveDailyState(newState);
     setCurrentTitle(title);
-    loadPage(title);
+    loadWikiPage(title);
 
     if (hasWon) {
       saveToHistory({
-        date: getTodayKey(),
+        date,
         source: route!.source,
         target: route!.target,
         clicks: newState.clicks,
         time: totalElapsed,
         path: newState.path,
       });
-
-      fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/daily/complete`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clicks: newState.clicks, time: totalElapsed }),
-      }).catch(console.error);
     }
   };
 
   if (!route) {
     return (
       <main className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-400">No daily route available yet. Come back later!</p>
+        <p className="text-gray-400">Loading...</p>
       </main>
     );
   }
@@ -222,6 +166,11 @@ export default function DailyPage() {
           <span className="text-5xl">🎉</span>
           <h1 className="text-3xl font-bold">You made it!</h1>
           <p className="text-gray-500">{route.source} → {route.target}</p>
+          <p className="text-xs text-gray-400">
+            {new Date(route.date).toLocaleDateString('en-US', {
+              weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+            })}
+          </p>
         </div>
 
         <div className="flex gap-8 text-center">
@@ -239,7 +188,7 @@ export default function DailyPage() {
           <div className="border rounded-xl p-4 text-center flex gap-8">
             <div>
               <p className="text-2xl font-bold">{route.stats.completions}</p>
-              <p className="text-sm text-gray-400">completions today</p>
+              <p className="text-sm text-gray-400">completions</p>
             </div>
             {route.stats.avgClicks && (
               <div>
@@ -248,12 +197,6 @@ export default function DailyPage() {
               </div>
             )}
           </div>
-        )}
-
-        {route.stats && (
-          <p className={`text-sm font-medium ${route.stats.difficulty.color}`}>
-            {route.stats.difficulty.label} difficulty
-          </p>
         )}
 
         <div className="flex flex-col items-center gap-2">
@@ -273,13 +216,13 @@ export default function DailyPage() {
             onClick={() => router.push('/daily/archive')}
             className="border rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-50 transition"
           >
-            Archives
+            ← Archives
           </button>
           <button
-            onClick={() => router.push('/')}
+            onClick={() => router.push('/daily')}
             className="bg-black text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-800 transition"
           >
-            Play with friends
+            Today's route
           </button>
         </div>
       </main>
@@ -294,10 +237,10 @@ export default function DailyPage() {
     <main className="flex h-screen overflow-hidden">
       <aside className="w-64 flex-shrink-0 border-r flex flex-col gap-4 p-4">
         <div className="flex flex-col gap-1">
-          <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold">Daily Route</p>
+          <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold">Archive</p>
           <p className="text-xs text-gray-400">
             {new Date(route.date).toLocaleDateString('en-US', {
-              weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+              weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
             })}
           </p>
         </div>
@@ -329,11 +272,17 @@ export default function DailyPage() {
               <p className="text-xs text-gray-400">
                 {route.stats.completions} player{route.stats.completions > 1 ? 's' : ''} finished
                 {route.stats.avgClicks && ` · avg ${route.stats.avgClicks} clicks`}
-                {route.stats.avgTime && ` · avg ${formatTime(route.stats.avgTime)}`}
               </p>
             )}
           </div>
         )}
+
+        <button
+          onClick={() => router.push('/daily/archive')}
+          className="text-sm text-gray-400 hover:text-black transition text-left"
+        >
+          ← Back to archives
+        </button>
       </aside>
 
       <div className="flex-1 overflow-y-auto">
