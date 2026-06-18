@@ -243,7 +243,6 @@ body {
   width: 16rem;
   flex-shrink: 0;
   border-right: 1px solid var(--border);
-  display: flex;
   flex-direction: column;
   gap: 1rem;
   padding: 1.25rem;

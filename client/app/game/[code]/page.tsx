@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { socket } from '@/lib/socket';
 import { Countdown } from '@/components/game/Countdown';
@@ -12,6 +12,8 @@ import type { Lobby } from '@shared/types';
 import { useGame } from '@/hooks/useGame';
 import { useRules } from '@/hooks/useRules';
 import { GameHUD } from '@/components/game/GameHUD';
+import { MousePointer, Clock, AlertTriangle, ArrowLeft, Target } from 'lucide-react';
+import { useTimer } from '@/hooks/useTimer';
 
 export default function GamePage() {
   const { code } = useParams<{ code: string }>();
@@ -19,7 +21,6 @@ export default function GamePage() {
 
   useEffect(() => {
     if (!socket.connected) socket.connect();
-
     socket.emit('lobby:get', { code }, (res: { ok: boolean; lobby?: Lobby }) => {
       if (res.ok && res.lobby) setLobby(res.lobby);
     });
@@ -28,7 +29,7 @@ export default function GamePage() {
   if (!lobby?.source) {
     return (
       <main className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-400">Loading...</p>
+        <p className="subtitle">Loading...</p>
       </main>
     );
   }
@@ -38,36 +39,30 @@ export default function GamePage() {
 
 function GameView({ lobby, code }: { lobby: Lobby; code: string }) {
   const router = useRouter();
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [startedAt, setStartedAt] = useState<number | null>(lobby.startedAt);
   const [showLeaveWarning, setShowLeaveWarning] = useState(false);
 
   useEffect(() => {
-    socket.on('game:started', ({ startedAt }: { startedAt: number }) => {
-      setStartedAt(startedAt);
-    });
+    socket.on('game:started', ({ startedAt }: { startedAt: number }) => setStartedAt(startedAt));
     return () => { socket.off('game:started'); };
   }, []);
 
   useEffect(() => {
-    socket.on('game:reset', () => {
-      router.push(`/lobby/${code}`);
-    });
+    socket.on('game:reset', () => router.push(`/lobby/${code}`));
     return () => { socket.off('game:reset'); };
   }, [code, router]);
 
   useEffect(() => {
     window.history.pushState(null, '', window.location.href);
-
     const handlePopState = () => {
       window.history.pushState(null, '', window.location.href);
       setShowLeaveWarning(true);
     };
-
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Block Ctrl+R / F5
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'r') e.preventDefault();
@@ -77,12 +72,8 @@ function GameView({ lobby, code }: { lobby: Lobby; code: string }) {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
-  // Warn on tab close / refresh
   useEffect(() => {
-    const handler = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = '';
-    };
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, []);
@@ -90,6 +81,7 @@ function GameView({ lobby, code }: { lobby: Lobby; code: string }) {
   useRules(lobby.rules);
 
   const handleNavigate = (title: string) => {
+    scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
     socket.emit('game:navigate', { code, page: title });
   };
 
@@ -102,6 +94,12 @@ function GameView({ lobby, code }: { lobby: Lobby; code: string }) {
   const { players, gameStatus, rankings, gaveUp } = useGame({
     initialPlayers: lobby.players,
     source: lobby.source!,
+  });
+
+  const myClicks = players.find(p => p.id === socket.id)?.clicks ?? 0;
+  const { elapsed, remaining, isUrgent, formatTime } = useTimer({
+    startedAt,
+    timeLimit: lobby.rules?.timeLimit ?? null,
   });
 
   if (gameStatus === 'finished') {
@@ -117,29 +115,27 @@ function GameView({ lobby, code }: { lobby: Lobby; code: string }) {
   }
 
   return (
-    <main className="flex h-screen overflow-hidden">
+    <main className="sidebar-layout">
 
       {/* Leave warning modal */}
       {showLeaveWarning && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-xl p-6 flex flex-col gap-4 max-w-sm w-full mx-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.6)' }}>
+          <div className="card w-full max-w-sm flex flex-col gap-4 fade-in">
             <h2 className="font-bold text-lg">Leave the game?</h2>
-            <p className="text-gray-500 text-sm">
+            <p className="text-sm" style={{ color: 'var(--muted)' }}>
               You will be counted as having given up.
             </p>
             <div className="flex gap-2">
               <button
                 onClick={() => setShowLeaveWarning(false)}
-                className="flex-1 border rounded-lg px-4 py-2 font-medium hover:bg-gray-50 transition"
+                className="btn btn-secondary flex-1"
               >
                 Stay
               </button>
               <button
-                onClick={() => {
-                  socket.emit('game:giveUp', { code });
-                  router.push('/');
-                }}
-                className="flex-1 bg-black text-white rounded-lg px-4 py-2 font-medium hover:bg-gray-800 transition"
+                onClick={() => { socket.emit('game:giveUp', { code }); router.push('/'); }}
+                className="btn btn-danger flex-1"
               >
                 Leave
               </button>
@@ -148,61 +144,112 @@ function GameView({ lobby, code }: { lobby: Lobby; code: string }) {
         </div>
       )}
 
-      {/* Sidebar */}
-      <aside className="w-64 flex-shrink-0 border-r flex flex-col gap-4 p-4 overflow-y-auto">
-        <div>
-          <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Target</p>
-          <p className="font-bold text-lg">{lobby.target}</p>
+      {/* Sidebar — desktop only */}
+      <aside className="sidebar hidden md:flex flex-col">
+        <div className="sidebar-section">
+          <p className="label">Target</p>
+          <div className="flex items-center gap-2">
+            <Target size={14} style={{ color: 'var(--accent)' }} />
+            <p className="font-bold">{lobby.target}</p>
+          </div>
         </div>
 
-        <div>
-          <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Current page</p>
+        <div className="sidebar-section">
+          <p className="label">Current page</p>
           <p className="text-sm font-medium truncate">
-            {loading ? <span className="text-gray-400">Loading...</span> : currentTitle}
+            {loading
+              ? <span style={{ color: 'var(--muted)' }}>Loading...</span>
+              : currentTitle
+            }
           </p>
         </div>
 
-        <PlayerTracker players={players} target={lobby.target!} hideOpponents={lobby.rules?.hideOpponents ?? false} />
+        <PlayerTracker
+          players={players}
+          target={lobby.target!}
+          hideOpponents={lobby.rules?.hideOpponents ?? false}
+        />
 
         {canGoBack && (
-          <button
-            onClick={goBack}
-            className="mt-auto text-sm text-gray-500 hover:text-black transition text-left"
-          >
-            ← Back
+          <button onClick={goBack} className="btn btn-ghost btn-sm mt-auto justify-start">
+            <ArrowLeft size={14} />
+            Back
           </button>
         )}
       </aside>
 
-      {/* Wikipedia content */}
-      <div className="flex-1 overflow-y-auto">
-        <GameHUD
-          target={lobby.target!}
-          clicks={players.find(p => p.id === socket.id)?.clicks ?? 0}
-          timeLimit={lobby.rules?.timeLimit ?? null}
-          startedAt={startedAt}
-        />
+      {/* Main content */}
+      <div className="main-content">
+
+        {/* HUD top — mobile : target only / desktop : full */}
+        <div className="md:hidden sticky top-0 z-40 flex items-center px-4 py-2 border-b"
+          style={{ background: 'var(--background)', borderColor: 'var(--border)' }}
+        >
+          <Target size={13} style={{ color: 'var(--accent)' }} />
+          <span className="font-bold ml-1.5 truncate">{lobby.target}</span>
+        </div>
+
+        <div className="hidden md:block">
+          <GameHUD
+            target={lobby.target!}
+            clicks={myClicks}
+            timeLimit={lobby.rules?.timeLimit ?? null}
+            startedAt={startedAt}
+          />
+        </div>
 
         {error && (
-          <div className="flex flex-col items-center justify-center gap-4 py-24 text-center px-8">
-            <span className="text-5xl">🔍</span>
-            <h2 className="text-xl font-bold">Page not found</h2>
-            <p className="text-gray-500 text-sm max-w-sm">{error}</p>
+          <div className="flex flex-col items-center justify-center gap-4 py-24 text-center px-8 fade-in">
+            <Target size={40} style={{ color: 'var(--muted)' }} />
+            <h2 className="font-bold text-xl">Page not found</h2>
+            <p className="text-sm max-w-sm" style={{ color: 'var(--muted)' }}>{error}</p>
             {canGoBack && (
-              <button
-                onClick={goBack}
-                className="bg-black text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-800 transition"
-              >
-                ← Go back
+              <button onClick={goBack} className="btn btn-primary">
+                <ArrowLeft size={15} />
+                Go back
               </button>
             )}
           </div>
         )}
 
-        <WikiPage html={html} onNavigate={navigate} />
+        <div ref={scrollRef} className="overflow-y-auto pb-16 md:pb-0">
+          <WikiPage html={html} onNavigate={navigate} />
+        </div>
+
+        {/* Bottom bar — mobile only */}
+        <div
+          className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3 border-t md:hidden"
+          style={{ background: 'var(--background)', borderColor: 'var(--border)' }}
+        >
+          <div className="flex items-center gap-1.5">
+            <MousePointer size={13} style={{ color: 'var(--muted)' }} />
+            <span className="text-sm" style={{ color: 'var(--muted)' }}>Clicks</span>
+            <span className="font-bold text-sm">{myClicks}</span>
+          </div>
+
+          <div
+            className="flex items-center gap-1.5 font-mono font-bold text-sm"
+            style={{ color: isUrgent ? 'var(--danger)' : 'var(--muted)' }}
+          >
+            {isUrgent
+              ? <AlertTriangle size={13} className="animate-pulse" />
+              : <Clock size={13} />
+            }
+            {remaining !== null
+              ? (remaining <= 0 ? '00:00' : formatTime(remaining))
+              : formatTime(elapsed)
+            }
+          </div>
+
+          {canGoBack && (
+            <button onClick={goBack} className="btn btn-ghost btn-sm">
+              <ArrowLeft size={14} />
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* <Countdown /> */}
+      <Countdown />
     </main>
   );
 }

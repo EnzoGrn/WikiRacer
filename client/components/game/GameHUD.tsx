@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Target, MousePointer, Clock, AlertTriangle } from 'lucide-react';
+import { useTimer } from '@/hooks/useTimer';
 
 interface GameHUDProps {
   target: string;
@@ -10,57 +11,39 @@ interface GameHUDProps {
 }
 
 export function GameHUD({ target, clicks, timeLimit, startedAt }: GameHUDProps) {
-  const [elapsed, setElapsed] = useState(0);
-
-  useEffect(() => {
-    if (!startedAt) return;
-
-    const interval = setInterval(() => {
-      setElapsed(Math.floor((Date.now() - startedAt) / 1000));
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [startedAt]);
-
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-    const s = (seconds % 60).toString().padStart(2, '0');
-    return `${m}:${s}`;
-  };
-
-  const remaining = timeLimit ? timeLimit - elapsed : null;
-  const isUrgent = remaining !== null && remaining <= 30;
+  const { remaining, isUrgent, formatTime, elapsed } = useTimer({ startedAt, timeLimit });
 
   return (
-    <div className="sticky top-0 z-40 bg-white border-b flex items-center justify-between px-4 py-2 text-sm">
-
-      {/* Target */}
-      <div className="flex items-center gap-2">
-        <span className="text-gray-400">Target</span>
+    <div
+      className="sticky top-0 z-40 flex items-center justify-between px-4 py-2 text-sm border-b"
+      style={{ background: 'var(--background)', borderColor: 'var(--border)' }}
+    >
+      <div className="flex items-center gap-1.5">
+        <Target size={13} style={{ color: 'var(--accent)' }} />
+        <span style={{ color: 'var(--muted)' }}>Target</span>
         <span className="font-bold">{target}</span>
       </div>
 
-      {/* Clicks + Timer */}
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-1">
-          <span className="text-gray-400">Clicks</span>
+        <div className="flex items-center gap-1.5">
+          <MousePointer size={13} style={{ color: 'var(--muted)' }} />
+          <span style={{ color: 'var(--muted)' }}>Clicks</span>
           <span className="font-bold">{clicks}</span>
         </div>
 
-        {timeLimit && remaining !== null && (
-          <div className={`flex items-center gap-1 font-mono font-bold transition-colors ${
-            isUrgent ? 'text-red-500' : 'text-gray-700'
-          }`}>
-            {isUrgent && <span className="animate-pulse">⚠</span>}
-            {remaining <= 0 ? '00:00' : formatTime(remaining)}
-          </div>
-        )}
-
-        {!timeLimit && (
-          <div className="text-gray-400 font-mono">
-            {formatTime(elapsed)}
-          </div>
-        )}
+        <div
+          className={`flex items-center gap-1.5 font-mono font-bold transition-colors`}
+          style={{ color: isUrgent ? 'var(--danger)' : 'var(--muted)' }}
+        >
+          {isUrgent
+            ? <AlertTriangle size={13} className="animate-pulse" />
+            : <Clock size={13} />
+          }
+          {remaining !== null
+            ? (remaining <= 0 ? '00:00' : formatTime(remaining))
+            : formatTime(elapsed)
+          }
+        </div>
       </div>
     </div>
   );
