@@ -7,6 +7,7 @@ import { GameHUD } from '@/components/game/GameHUD';
 import { fetchWikiPage, normalizeTitle } from '@/services/wikipedia';
 import { getTodayKey, loadDailyState, saveDailyState, saveToHistory, formatTime } from '@/services/daily';
 import type { DailyState } from '@/services/daily';
+import { Trophy, MousePointer, Clock, ArrowRight, Archive, Users, Target, BookOpen } from 'lucide-react';
 
 interface DailyRoute {
   date: string;
@@ -31,6 +32,7 @@ const DEFAULT_STATE: DailyState = {
 
 export default function DailyPage() {
   const router = useRouter();
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [route, setRoute] = useState<DailyRoute | null>(null);
   const [html, setHtml] = useState('');
   const [loading, setLoading] = useState(false);
@@ -70,24 +72,17 @@ export default function DailyPage() {
     const handleVisibility = () => {
       const state = gameStateRef.current;
       if (state.status !== 'playing') return;
-
       if (document.hidden) {
         const sessionElapsed = state.sessionStart
           ? Math.floor((Date.now() - state.sessionStart) / 1000)
           : 0;
-        const newState = {
-          ...state,
-          elapsedSeconds: state.elapsedSeconds + sessionElapsed,
-          sessionStart: null,
-        };
+        const newState = { ...state, elapsedSeconds: state.elapsedSeconds + sessionElapsed, sessionStart: null };
         setGameState(newState);
         saveDailyState(newState);
       } else {
-        const newState = { ...state, sessionStart: Date.now() };
-        setGameState(newState);
+        setGameState({ ...state, sessionStart: Date.now() });
       }
     };
-
     document.addEventListener('visibilitychange', handleVisibility);
     return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, []);
@@ -97,6 +92,7 @@ export default function DailyPage() {
     try {
       const content = await fetchWikiPage(title);
       setHtml(content);
+      scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       console.error(err);
     } finally {
@@ -111,7 +107,6 @@ export default function DailyPage() {
     const sessionStart = gameState.sessionStart ?? now;
     const sessionElapsed = Math.floor((now - sessionStart) / 1000);
     const totalElapsed = gameState.elapsedSeconds + sessionElapsed;
-
     const hasWon = normalizeTitle(title) === normalizeTitle(route!.target);
 
     const newState: DailyState = {
@@ -149,7 +144,7 @@ export default function DailyPage() {
   if (!route) {
     return (
       <main className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-400">No daily route available yet. Come back later!</p>
+        <p className="subtitle">No daily route available yet. Come back later!</p>
       </main>
     );
   }
@@ -158,70 +153,109 @@ export default function DailyPage() {
     const totalSeconds = gameState.totalSeconds ?? gameState.elapsedSeconds;
 
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center gap-8 p-8">
-        <div className="flex flex-col items-center gap-2">
-          <span className="text-5xl">🎉</span>
-          <h1 className="text-3xl font-bold">You made it!</h1>
-          <p className="text-gray-500">{route.source} → {route.target}</p>
-        </div>
+      <main className="min-h-screen flex flex-col items-center justify-center p-8">
+        <div className="w-full max-w-lg flex flex-col gap-8">
 
-        <div className="flex gap-8 text-center">
-          <div>
-            <p className="text-3xl font-bold">{gameState.clicks}</p>
-            <p className="text-sm text-gray-400">clicks</p>
-          </div>
-          <div>
-            <p className="text-3xl font-bold">{formatTime(totalSeconds)}</p>
-            <p className="text-sm text-gray-400">time</p>
-          </div>
-        </div>
-
-        {route.stats && route.stats.completions > 0 && (
-          <div className="border rounded-xl p-4 text-center flex gap-8">
-            <div>
-              <p className="text-2xl font-bold">{route.stats.completions}</p>
-              <p className="text-sm text-gray-400">completions today</p>
+          {/* Header */}
+          <div className="flex flex-col items-center gap-3 text-center">
+            <Trophy size={48} style={{ color: '#f59e0b' }} />
+            <h1 className="title text-3xl">You made it!</h1>
+            <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--muted)' }}>
+              <span>{route.source}</span>
+              <ArrowRight size={14} />
+              <span>{route.target}</span>
             </div>
-            {route.stats.avgClicks && (
-              <div>
-                <p className="text-2xl font-bold">{route.stats.avgClicks}</p>
-                <p className="text-sm text-gray-400">avg clicks</p>
+            <p className="text-xs" style={{ color: 'var(--muted)' }}>
+              {new Date(route.date).toLocaleDateString('en-US', {
+                weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+              })}
+            </p>
+          </div>
+
+          {/* Stats perso */}
+          <div className="flex gap-4">
+            <div className="card flex-1 flex flex-col items-center gap-1 text-center">
+              <MousePointer size={20} style={{ color: 'var(--accent)' }} />
+              <p className="text-3xl font-bold">{gameState.clicks}</p>
+              <p className="subtitle text-xs">clicks</p>
+            </div>
+            <div className="card flex-1 flex flex-col items-center gap-1 text-center">
+              <Clock size={20} style={{ color: 'var(--accent)' }} />
+              <p className="text-3xl font-bold font-mono">{formatTime(totalSeconds)}</p>
+              <p className="subtitle text-xs">time</p>
+            </div>
+          </div>
+
+          {/* Stats globales */}
+          {route.stats && route.stats.completions > 0 && (
+            <div className="card flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <p className="label">Today's stats</p>
+                {route.stats.difficulty && (
+                  <span className={`badge ${route.stats.difficulty.color}`}
+                    style={{ background: 'var(--muted-bg)' }}>
+                    {route.stats.difficulty.label}
+                  </span>
+                )}
               </div>
-            )}
+              <div className="flex gap-6">
+                <div>
+                  <p className="text-2xl font-bold">{route.stats.completions}</p>
+                  <p className="subtitle text-xs">completions</p>
+                </div>
+                {route.stats.avgClicks && (
+                  <div>
+                    <p className="text-2xl font-bold">{route.stats.avgClicks}</p>
+                    <p className="subtitle text-xs">avg clicks</p>
+                  </div>
+                )}
+                {route.stats.avgTime && (
+                  <div>
+                    <p className="text-2xl font-bold font-mono">{formatTime(route.stats.avgTime)}</p>
+                    <p className="subtitle text-xs">avg time</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Path */}
+          <div className="flex flex-col gap-2">
+            <p className="label">Your path</p>
+            <div className="flex items-center gap-1 flex-wrap">
+              {[route.source, ...gameState.path].map((page, i) => (
+                <span key={i} className="flex items-center gap-1">
+                  <span
+                    className="text-xs rounded px-2 py-0.5"
+                    style={{ background: 'var(--muted-bg)', color: 'var(--foreground)' }}
+                  >
+                    {page}
+                  </span>
+                  {i < gameState.path.length && (
+                    <ArrowRight size={10} style={{ color: 'var(--muted)' }} />
+                  )}
+                </span>
+              ))}
+            </div>
           </div>
-        )}
 
-        {route.stats && (
-          <p className={`text-sm font-medium ${route.stats.difficulty.color}`}>
-            {route.stats.difficulty.label} difficulty
-          </p>
-        )}
-
-        <div className="flex flex-col items-center gap-2">
-          <p className="text-sm text-gray-400">Your path</p>
-          <div className="flex items-center gap-1 flex-wrap justify-center text-sm">
-            {[route.source, ...gameState.path].map((page, i) => (
-              <span key={i} className="flex items-center gap-1">
-                <span className="bg-gray-100 rounded px-2 py-0.5">{page}</span>
-                {i < gameState.path.length && <span className="text-gray-400">→</span>}
-              </span>
-            ))}
+          {/* Actions */}
+          <div className="flex gap-3">
+            <button
+              onClick={() => router.push('/daily/archive')}
+              className="btn btn-secondary flex-1"
+            >
+              <Archive size={15} />
+              Archives
+            </button>
+            <button
+              onClick={() => router.push('/')}
+              className="btn btn-primary flex-1"
+            >
+              <Users size={15} />
+              Play with friends
+            </button>
           </div>
-        </div>
-
-        <div className="flex gap-3">
-          <button
-            onClick={() => router.push('/daily/archive')}
-            className="border rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-50 transition"
-          >
-            Archives
-          </button>
-          <button
-            onClick={() => router.push('/')}
-            className="bg-black text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-800 transition"
-          >
-            Play with friends
-          </button>
         </div>
       </main>
     );
@@ -232,59 +266,119 @@ export default function DailyPage() {
     : null;
 
   return (
-    <main className="flex h-screen overflow-hidden">
-      <aside className="w-64 flex-shrink-0 border-r flex flex-col gap-4 p-4">
-        <div className="flex flex-col gap-1">
-          <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold">Daily Route</p>
-          <p className="text-xs text-gray-400">
+    <main className="sidebar-layout">
+
+      {/* Sidebar — desktop only */}
+      <aside className="sidebar hidden md:flex flex-col">
+        <div className="sidebar-section">
+          <p className="label">Daily Route</p>
+          <p className="text-xs" style={{ color: 'var(--muted)' }}>
             {new Date(route.date).toLocaleDateString('en-US', {
-              weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+              weekday: 'long', day: 'numeric', month: 'long'
             })}
           </p>
         </div>
 
-        <div className="flex flex-col gap-1">
-          <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold">Target</p>
-          <p className="font-bold">{route.target}</p>
+        <div className="sidebar-section">
+          <p className="label">Target</p>
+          <div className="flex items-center gap-2">
+            <Target size={14} style={{ color: 'var(--accent)' }} />
+            <p className="font-bold text-sm">{route.target}</p>
+          </div>
         </div>
 
-        <div className="flex flex-col gap-1">
-          <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold">Current page</p>
+        <div className="sidebar-section">
+          <p className="label">Current page</p>
           <p className="text-sm font-medium truncate">
-            {loading ? <span className="text-gray-400">Loading...</span> : currentTitle}
+            {loading
+              ? <span style={{ color: 'var(--muted)' }}>Loading...</span>
+              : currentTitle
+            }
           </p>
         </div>
 
-        <div className="flex flex-col gap-1">
-          <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold">Clicks</p>
+        <div className="sidebar-section">
+          <p className="label">Clicks</p>
           <p className="text-2xl font-bold">{gameState.clicks}</p>
         </div>
 
         {route.stats && (
-          <div className="flex flex-col gap-1 mt-auto">
-            <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold">Difficulty</p>
-            <p className={`font-bold ${route.stats.difficulty.color}`}>
+          <div className="sidebar-section mt-auto">
+            <p className="label">Difficulty</p>
+            <p className={`font-bold text-sm ${route.stats.difficulty.color}`}>
               {route.stats.difficulty.label}
             </p>
             {route.stats.completions > 0 && (
-              <p className="text-xs text-gray-400">
+              <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>
                 {route.stats.completions} player{route.stats.completions > 1 ? 's' : ''} finished
                 {route.stats.avgClicks && ` · avg ${route.stats.avgClicks} clicks`}
-                {route.stats.avgTime && ` · avg ${formatTime(route.stats.avgTime)}`}
               </p>
             )}
           </div>
         )}
+
+        <button
+          onClick={() => router.push('/daily/archive')}
+          className="btn btn-ghost btn-sm justify-start"
+        >
+          <Archive size={14} />
+          Archives
+        </button>
       </aside>
 
-      <div className="flex-1 overflow-y-auto">
-        <GameHUD
-          target={route.target}
-          clicks={gameState.clicks}
-          timeLimit={null}
-          startedAt={virtualStartedAt}
-        />
-        <WikiPage html={html} onNavigate={handleNavigate} />
+      {/* Main content */}
+      <div className="main-content">
+
+        {/* Top bar mobile */}
+        <div className="md:hidden sticky top-0 z-40 flex items-center px-4 py-2 border-b"
+          style={{ background: 'var(--background)', borderColor: 'var(--border)' }}
+        >
+          <Target size={13} style={{ color: 'var(--accent)' }} />
+          <span className="font-bold ml-1.5 truncate text-sm">{route.target}</span>
+        </div>
+
+        {/* HUD desktop */}
+        <div className="hidden md:block">
+          <GameHUD
+            target={route.target}
+            clicks={gameState.clicks}
+            timeLimit={null}
+            startedAt={virtualStartedAt}
+          />
+        </div>
+
+        <div ref={scrollRef} className="overflow-y-auto pb-16 md:pb-0">
+          <WikiPage html={html} onNavigate={handleNavigate} />
+        </div>
+
+        {/* Bottom bar mobile */}
+        <div
+          className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3 border-t md:hidden"
+          style={{ background: 'var(--background)', borderColor: 'var(--border)' }}
+        >
+          <div className="flex items-center gap-1.5">
+            <MousePointer size={13} style={{ color: 'var(--muted)' }} />
+            <span className="text-sm font-bold">{gameState.clicks}</span>
+          </div>
+
+          <div className="flex items-center gap-1.5 font-mono font-bold text-sm"
+            style={{ color: 'var(--muted)' }}
+          >
+            <Clock size={13} />
+            {formatTime(gameState.elapsedSeconds + (
+              gameState.sessionStart
+                ? Math.floor((Date.now() - gameState.sessionStart) / 1000)
+                : 0
+            ))}
+          </div>
+
+          <button
+            onClick={() => router.push('/daily/archive')}
+            className="btn btn-ghost btn-sm"
+          >
+            <BookOpen size={14} />
+          </button>
+        </div>
       </div>
     </main>
   );
