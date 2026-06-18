@@ -155,7 +155,7 @@ export async function endGame(code: string, players: Player[], startedAt: number
     id: p.id,
     name: p.name,
     clicks: p.clicks,
-    time: p.finishedAt! - startedAt,
+    time: Math.floor((p.finishedAt! - startedAt) / 1000),
     path: p.path,
   }));
 
