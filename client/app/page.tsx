@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useLobby } from '@/hooks/useLobby';
 import { useSearchParams } from 'next/navigation';
-import { Users, Hash, ArrowRight, Calendar } from 'lucide-react';
+import { Users, Hash, ArrowRight, Calendar, Archive } from 'lucide-react';
 
 type Mode = 'create' | 'join';
 
@@ -51,11 +51,10 @@ function HomeContent() {
           <div className="flex rounded-lg border overflow-hidden">
             <button
               onClick={() => setMode('create')}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition ${
-                mode === 'create'
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition ${mode === 'create'
                   ? 'bg-foreground text-background'
                   : 'hover:bg-muted-bg text-foreground'
-              }`}
+                }`}
               style={mode === 'create' ? { background: 'var(--foreground)', color: 'var(--background)' } : {}}
             >
               <Users size={15} />
@@ -63,11 +62,10 @@ function HomeContent() {
             </button>
             <button
               onClick={() => setMode('join')}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition ${
-                mode === 'join'
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition ${mode === 'join'
                   ? 'bg-foreground text-background'
                   : 'hover:bg-muted-bg text-foreground'
-              }`}
+                }`}
               style={mode === 'join' ? { background: 'var(--foreground)', color: 'var(--background)' } : {}}
             >
               <Hash size={15} />
@@ -131,6 +129,18 @@ function HomeContent() {
         >
           <Calendar size={15} />
           Play today's daily route
+          <ArrowRight size={13} />
+        </a>
+
+        <a
+          href="/daily/archive"
+          className="flex items-center justify-center gap-2 text-sm transition"
+          style={{ color: 'var(--muted)' }}
+          onMouseEnter={e => (e.currentTarget.style.color = 'var(--foreground)')}
+          onMouseLeave={e => (e.currentTarget.style.color = 'var(--muted)')}
+        >
+          <Archive size={15} />
+          Browse archives
           <ArrowRight size={13} />
         </a>
       </div>

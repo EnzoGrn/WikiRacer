@@ -24,11 +24,17 @@ export function Countdown() {
   if (count === null) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/60 z-50">
+    <div
+      className="fixed inset-0 flex flex-col items-center justify-center z-50 fade-in"
+      style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)' }}
+    >
+      <p className="text-white text-sm font-medium mb-4 tracking-widest uppercase opacity-60">
+        Starting in
+      </p>
       <span
         key={count}
-        className="text-white font-bold animate-ping"
-        style={{ fontSize: '12rem', lineHeight: 1 }}
+        className="font-bold text-white animate-ping"
+        style={{ fontSize: '10rem', lineHeight: 1 }}
       >
         {count}
       </span>
