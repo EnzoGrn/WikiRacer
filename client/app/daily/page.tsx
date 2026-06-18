@@ -200,7 +200,7 @@ export default function DailyPage() {
       fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/daily/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clicks: newState.clicks, time: totalElapsed }),
+        body: JSON.stringify({ clicks: newState.clicks, timeSeconds: totalElapsed }),
       }).catch(console.error);
     }
   };
