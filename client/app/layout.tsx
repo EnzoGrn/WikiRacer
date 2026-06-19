@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     template: '%s — WikiRacer',
   },
   description: 'Race through Wikipedia pages faster than your friends. Navigate from one article to another using only the links on each page.',
-  keywords: ['wikipedia', 'game', 'multiplayer', 'race', 'wiki', 'wikiracer'],
+  keywords: ['wiki race', 'wikirace', 'wikipedia game', 'wikipedia race', 'wiki game', 'wikiracer', 'jeu wikipedia'],
   authors: [{ name: 'Enzo Garnier', url: 'https://enzogarnier.fr' }],
   creator: 'Enzo Garnier',
   metadataBase: new URL('https://wikiracer.enzogarnier.fr'),
